@@ -1,0 +1,86 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "monthwise-production",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-19",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/auth/*"],
+  },
+  "vars": {
+    "MODE": "production",
+    "APP_ORIGIN": "",
+    "OWNER_EMAIL": "fatlindnebihi10@gmail.com",
+    "GOOGLE_CLIENT_ID": "",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "monthwise-production",
+      "database_id": "333feb62-aa82-41b7-8b03-7d330e45eff5",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "env": {
+    "local": {
+      "name": "monthwise-local",
+      "vars": {
+        "MODE": "local",
+        "APP_ORIGIN": "",
+        "OWNER_EMAIL": "",
+        "GOOGLE_CLIENT_ID": "",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "monthwise-local",
+          "database_id": "00000000-0000-0000-0000-000000000001",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
+    "staging": {
+      "name": "monthwise-staging",
+      "vars": {
+        "MODE": "production",
+        "APP_ORIGIN": "https://monthwise-staging.fnebihi10.workers.dev",
+        "OWNER_EMAIL": "fatlindnebihi10@gmail.com",
+        "GOOGLE_CLIENT_ID": "932682992741-ju7v0u16gbhu3j43fqdmt4fn6ndpsajh.apps.googleusercontent.com",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "monthwise-staging",
+          "database_id": "33853f06-8e98-4422-89cb-4bd2221cc442",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "workers_dev": true,
+      "preview_urls": false,
+    },
+    "personal": {
+      "name": "monthwise",
+      "vars": {
+        "MODE": "production",
+        "APP_ORIGIN": "https://monthwise.fnebihi10.workers.dev",
+        "OWNER_EMAIL": "fatlindnebihi10@gmail.com",
+        "GOOGLE_CLIENT_ID": "932682992741-ju7v0u16gbhu3j43fqdmt4fn6ndpsajh.apps.googleusercontent.com",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "monthwise-staging",
+          "database_id": "33853f06-8e98-4422-89cb-4bd2221cc442",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "workers_dev": true,
+      "preview_urls": false,
+    },
+  },
+  "account_id": "ed9f9186f4199034f2499cf3da347885",
+}
