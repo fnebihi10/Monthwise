@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { expenseCategories, type Snapshot, type LedgerEntry } from './models';
 import { euro } from './finance';
 export function HistoryPanel({
@@ -11,15 +11,23 @@ export function HistoryPanel({
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [count, setCount] = useState(30);
-  const rows = data.entries
-    .filter(
-      (e) =>
-        (category === 'all' || e.category === category) &&
-        [e.date, e.merchant, e.note, e.category].some((v) =>
-          v.toLowerCase().includes(query.toLowerCase()),
-        ),
-    )
-    .sort((a, b) => b.date.localeCompare(a.date));
+  const accountNames = useMemo(
+    () => new Map(data.accounts.map((a) => [a.id, a.name])),
+    [data.accounts],
+  );
+  const rows = useMemo(
+    () =>
+      data.entries
+        .filter(
+          (e) =>
+            (category === 'all' || e.category === category) &&
+            [e.date, e.merchant, e.note, e.category].some((v) =>
+              v.toLowerCase().includes(query.toLowerCase()),
+            ),
+        )
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    [data.entries, category, query],
+  );
   return (
     <section className="release-section">
       <h2>
@@ -64,7 +72,7 @@ export function HistoryPanel({
               <span>
                 <strong>{e.merchant}</strong>
                 <small>
-                  {e.category} · {data.accounts.find((a) => a.id === e.accountId)?.name}
+                  {e.category} · {accountNames.get(e.accountId)}
                   {e.note ? ' · ' + e.note : ''}
                 </small>
               </span>

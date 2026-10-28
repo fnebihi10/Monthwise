@@ -2,6 +2,12 @@
 
 ## Latest status
 
+The operator subsequently added the Google secret securely in Cloudflare. Active version after that change was `996cfbe5-654a-4004-94f7-f2407b3d6622`. A hosted check confirmed the correct Google redirect and protected login cookie. The operator confirmed real sign-in, successful JSON restoration, and installation/use of the new domain on iPhone. Two-account hosted isolation and the full physical-device offline flow remain unconfirmed.
+
+A later local quality pass adds diagnostics, dependency patches, refactoring and broader tests. Those changes have not yet been deployed. See [Quality status](QUALITY-STATUS.md).
+
+## Domain attachment history
+
 After the operator removed the root parking A record, domain attachment succeeded. `monthwise.online` now routes to `monthwise-public`, active version `ff225b96-d8b3-4dea-810c-324fcceaeb76`.
 
 Hosted checks confirmed homepage HTTP 200 with CSP, anonymous `/api/ledger` HTTP 401 with no-store, and `/auth/google` HTTP 503 explaining that Google setup is incomplete. `/privacy.html` uses Cloudflare's canonical HTML redirect. The Google client secret still needs to be entered directly by the operator. Public sign-in and personal-record migration have not been completed.

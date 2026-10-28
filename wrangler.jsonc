@@ -121,6 +121,18 @@
           "custom_domain": true,
         },
       ],
+      "observability": {
+        "enabled": true,
+        "redact_query_string": true,
+        "logs": {
+          "enabled": true,
+          "invocation_logs": false,
+          "head_sampling_rate": 1,
+        },
+        "traces": {
+          "enabled": false,
+        },
+      },
     },
   },
   "account_id": "ed9f9186f4199034f2499cf3da347885",

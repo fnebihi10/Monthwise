@@ -2,8 +2,9 @@ import type { AuthEnv } from './auth';
 import { hashToken } from './auth';
 import { json, ApiError } from './common';
 
-export function secureResponse(response: Response, production: boolean) {
+export function secureResponse(response: Response, production: boolean, requestId?: string) {
   const headers = new Headers(response.headers);
+  if (requestId) headers.set('X-Request-ID', requestId);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'no-referrer');
   headers.set('X-Frame-Options', 'DENY');

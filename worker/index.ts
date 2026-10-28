@@ -7,6 +7,8 @@ import { expenseCategories } from '../src/models';
 import type { LedgerPage } from '../src/models';
 import { secureResponse, edgeGuard, userRate, limited } from './security';
 import { deleteAccount } from './account';
+import { failureResponse } from './diagnostics';
+import { health } from './health';
 export type Env = AuthEnv & { DB: D1Database; ASSETS?: Fetcher };
 export async function snapshot(db: D1Database, user: Identity): Promise<Snapshot> {
   return (await readSnapshot(db, user)).snapshot;
@@ -78,6 +80,7 @@ export async function handleApi(
   request: Request,
   env: Env,
   resolveIdentity: (request: Request, env: AuthEnv) => Promise<Identity | null> = authenticate,
+  requestId = crypto.randomUUID(),
 ): Promise<Response> {
   try {
     const url = new URL(request.url);
@@ -308,13 +311,13 @@ export async function handleApi(
         { error: 'This change is already recorded. Refresh your ledger before retrying.' },
         409,
       );
-    console.error('Ledger request failed:', error instanceof Error ? error.name : 'UnknownError');
-    return json({ error: 'Unable to save or load your ledger. Please try again.' }, 500);
+    return failureResponse('ledger', requestId, 500);
   }
 }
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const path = new URL(request.url).pathname;
+    const requestId = crypto.randomUUID();
     try {
       let response: Response;
       const guarded =
@@ -322,17 +325,21 @@ export default {
           ? await edgeGuard(request, env)
           : null;
       if (guarded) response = guarded;
-      else if (path.startsWith('/auth/')) response = await handleAuth(request, env);
-      else if (path.startsWith('/api/')) response = await handleApi(request, env);
+      else if (path === '/api/health' && request.method === 'GET') response = await health(env);
+      else if (path.startsWith('/auth/'))
+        response = await handleAuth(request, env, undefined, requestId);
+      else if (path.startsWith('/api/'))
+        response = await handleApi(request, env, authenticate, requestId);
       else
         response = env.ASSETS
           ? await env.ASSETS.fetch(request)
           : new Response('Not found', { status: 404 });
-      return secureResponse(response, env.MODE === 'production');
+      return secureResponse(response, env.MODE === 'production', requestId);
     } catch {
       return secureResponse(
-        json({ error: 'The service is temporarily unavailable. Please try again.' }, 503),
+        failureResponse('worker', requestId, 503),
         env.MODE === 'production',
+        requestId,
       );
     }
   },

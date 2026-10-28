@@ -6,6 +6,8 @@ React 19, TypeScript, Vite, Cloudflare Workers and D1. The live personal deploym
 
 New to the project? Read [How Monthwise works](docs/PROJECT-GUIDE.md) for a plain-language explanation of the stack, Google sign-in, database and deployment.
 
+See [Quality status](docs/QUALITY-STATUS.md) for verification evidence and remaining launch work. [Operations](docs/OPERATIONS.md) covers diagnostics, backups and local recovery drills.
+
 ## Daily use
 
 1. Open Accounts and create your cash/bank/savings accounts with opening balances. Opening balances are not income.

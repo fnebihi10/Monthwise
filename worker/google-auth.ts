@@ -1,4 +1,5 @@
 import * as oauth from 'oauth4webapi';
+import { recordFailure } from './diagnostics';
 import {
   allowedUser,
   accessConfigured,
@@ -86,6 +87,7 @@ export async function handleAuth(
   request: Request,
   env: GoogleAuthEnv,
   services: AuthServices = { exchange: exchangeGoogleCode },
+  requestId = crypto.randomUUID(),
 ): Promise<Response> {
   const url = new URL(request.url);
   const origin = configuredOrigin(env);
@@ -205,8 +207,10 @@ export async function handleAuth(
     return problem('This page does not exist.', 404);
   } catch {
     // Never log authorization codes, cookies, ID tokens or client secrets.
+    recordFailure('auth', requestId, 401);
     return problem(
-      'Sign-in could not be completed. Please select a verified Google account and try again.',
+      'Sign-in could not be completed. Please select a verified Google account and try again. Reference: ' +
+        requestId,
       401,
       true,
     );

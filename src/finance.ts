@@ -21,8 +21,9 @@ export const months = [
   'November',
   'December',
 ];
+const currencyFormatter = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
 export function euro(cents: number) {
-  return new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+  return currencyFormatter.format(cents / 100);
 }
 export function entriesForMonth<T extends Entry>(entries: T[], year: number, month: number) {
   const prefix = `${year}-${String(month + 1).padStart(2, '0')}-`;

@@ -83,6 +83,7 @@ export async function clearPrivateData() {
   }
 }
 export function withPending(base: Snapshot, pending: PendingEntry[]): Snapshot {
+  if (!pending.length) return base;
   const ids = new Set(base.entries.map((e) => e.id));
   return {
     ...base,
