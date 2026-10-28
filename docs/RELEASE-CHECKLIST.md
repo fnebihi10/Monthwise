@@ -24,4 +24,4 @@ No deployment is part of these local fixes. Before a later deployment:
 4. Verify real owner login, sign-out, account totals, planning, JSON export and restore on disposable records.
 5. Verify iPhone installation, standalone sign-in, offline reload, queued entry creation and reconnection exactly once.
 
-The JSON recovery contract is 8 MB and 25,000 records per collection. Both exporting and importing enforce it. Use D1 database exports for ledgers exceeding that contract. Keep regular independent backups even while using provider recovery.
+The JSON recovery contract is 8 MB and 25,000 total records. Both exporting and importing enforce it. Use D1 database exports for ledgers exceeding that contract. Keep regular independent backups even while using provider recovery.

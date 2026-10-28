@@ -2,7 +2,7 @@
 
 Personal app: https://monthwise.fnebihi10.workers.dev
 
-React 19, TypeScript, Vite, Cloudflare Workers and D1. Owner-only Google sign-in; the personal deployment retains the original ledger database.
+React 19, TypeScript, Vite, Cloudflare Workers and D1. The live personal deployment uses owner-only Google sign-in and retains its original database. A separate public multi-user environment is prepared on this branch; see [Public launch](docs/PUBLIC-LAUNCH.md) for its setup and release status.
 
 New to the project? Read [How Monthwise works](docs/PROJECT-GUIDE.md) for a plain-language explanation of the stack, Google sign-in, database and deployment.
 
@@ -37,7 +37,7 @@ Local development uses a shared development identity and a separate local D1 dat
 
 GitHub Actions runs these checks on each push and pull request without deploying or accessing cloud secrets. See [Architecture](docs/ARCHITECTURE.md) for data loading and recovery behavior, and [Release checklist](docs/RELEASE-CHECKLIST.md) for the repository and deployment handoff.
 
-JSON backups support up to 8 MB and 25,000 records per collection. Export and restore enforce the same limits; use a D1 database export for larger ledgers. Temporary sync failures remain queued and can be retried without creating duplicate entries.
+JSON backups support up to 8 MB and 25,000 total records. Export and restore enforce the same limits; use a D1 database export for larger ledgers. Temporary sync failures remain queued and can be retried without creating duplicate entries.
 
 ## Personal deployment
 

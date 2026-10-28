@@ -19,7 +19,8 @@
     "check": "npm run format:check && npm run typecheck && npm test && npm run build && npm run test:e2e && npm run test:pwa",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "deploy:personal": "npm run build && wrangler deploy --env personal"
+    "deploy:personal": "npm run build && wrangler deploy --env personal",
+    "deploy:public": "node scripts/check-public-config.mjs && npm run build && wrangler deploy --env public"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

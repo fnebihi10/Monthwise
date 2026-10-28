@@ -4,6 +4,9 @@ export type AuthEnv = {
   MODE?: string;
   APP_ORIGIN?: string;
   OWNER_EMAIL?: string;
+  ACCESS_MODE?: string;
+  SUPPORT_EMAIL?: string;
+  EDGE_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   DB?: D1Database;
@@ -35,6 +38,19 @@ export function cookie(name: string, value: string, maxAge: number): string {
 }
 export function allowedOwner(email: string, env: AuthEnv): boolean {
   return !!env.OWNER_EMAIL && email.trim().toLowerCase() === env.OWNER_EMAIL.trim().toLowerCase();
+}
+export function accessConfigured(env: AuthEnv) {
+  return (
+    env.ACCESS_MODE === 'public' ||
+    ((!env.ACCESS_MODE || env.ACCESS_MODE === 'owner') && !!env.OWNER_EMAIL)
+  );
+}
+export function allowedUser(email: string, env: AuthEnv) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return false;
+  return (
+    env.ACCESS_MODE === 'public' ||
+    ((!env.ACCESS_MODE || env.ACCESS_MODE === 'owner') && allowedOwner(email, env))
+  );
 }
 export function configuredOrigin(env: AuthEnv): string | null {
   try {
@@ -73,7 +89,7 @@ export async function verifyGoogleIdToken(
     typeof payload.email !== 'string' ||
     payload.email_verified !== true ||
     payload.nonce !== nonce ||
-    !allowedOwner(payload.email, env) ||
+    !allowedUser(payload.email, env) ||
     (payload.azp !== undefined && payload.azp !== env.GOOGLE_CLIENT_ID)
   )
     throw new Error('Account is not allowed');
@@ -89,7 +105,12 @@ export async function authenticate(request: Request, env: AuthEnv): Promise<Iden
   ) {
     return { id: 'local-development-user', email: 'Local workspace', local: true };
   }
-  if (!env.DB || !configuredOrigin(env) || url.origin !== configuredOrigin(env) || !env.OWNER_EMAIL)
+  if (
+    !env.DB ||
+    !configuredOrigin(env) ||
+    url.origin !== configuredOrigin(env) ||
+    !accessConfigured(env)
+  )
     return null;
   const token = readCookie(request, SESSION_COOKIE);
   if (!token) return null;
@@ -98,6 +119,6 @@ export async function authenticate(request: Request, env: AuthEnv): Promise<Iden
   )
     .bind(await hashToken(token), Math.floor(Date.now() / 1000))
     .first<{ user_id: string; email: string }>();
-  if (!session || !allowedOwner(session.email, env)) return null;
+  if (!session || !allowedUser(session.email, env)) return null;
   return { id: session.user_id, email: session.email, local: false };
 }

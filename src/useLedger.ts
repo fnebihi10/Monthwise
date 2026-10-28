@@ -6,6 +6,7 @@ import {
   removePending,
   saveSnapshot,
   readCached,
+  cacheOwner,
   lockCache,
   withPending,
   type PendingEntry,
@@ -38,8 +39,18 @@ export function useLedger() {
       if (syncing.current) return syncing.current;
       if (mutating.current && !force) return;
       const task = (async () => {
+        let authenticatedOwner: string | null = null;
         try {
           const latest = await request<{ version: number; ownerId: string }>('/api/ledger/version');
+          authenticatedOwner = latest.ownerId;
+          const previousOwner = base.current.user.id || (await cacheOwner().catch(() => null));
+          if (previousOwner && previousOwner !== latest.ownerId) {
+            await lockCache().catch(() => {});
+            base.current = emptySnapshot;
+            setSnapshot(emptySnapshot);
+            setPending([]);
+            version.current = null;
+          }
           let value = base.current;
           let changed =
             force || latest.ownerId !== value.user.id || latest.version !== version.current;
@@ -86,7 +97,7 @@ export function useLedger() {
           if (!(e instanceof RequestError)) {
             try {
               const cached = await readCached();
-              if (cached) {
+              if (cached && (!authenticatedOwner || cached.user.id === authenticatedOwner)) {
                 show(cached, await pendingFor(cached.user.id));
                 setOffline(true);
                 return;

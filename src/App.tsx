@@ -1,5 +1,5 @@
 import { PlanningPanel, HistoryPanel, ToolsPanel } from './ReleasePanels';
-import { clearPrivateData } from './offline';
+import { clearPrivateData, lockCache } from './offline';
 import { download } from './download';
 import { useEffect, useRef, useState } from 'react';
 import { useLedger } from './useLedger';
@@ -117,10 +117,21 @@ export default function App() {
             {ledger.state === 'loading'
               ? 'A moment.'
               : ledger.state === 'signed-out'
-                ? 'Just for you.'
+                ? 'Make room for your plans.'
                 : 'Let’s reconnect.'}
           </h1>
-          <p>{ledger.state === 'loading' ? 'Opening your ledger…' : ledger.error}</p>
+          <p>
+            {ledger.state === 'loading'
+              ? 'Opening your ledger…'
+              : ledger.state === 'signed-out'
+                ? 'Track income, expenses and savings goals, with a private ledger for your account.'
+                : ledger.error}
+          </p>
+          {ledger.state === 'signed-out' && (
+            <p className="muted">
+              {ledger.error} <a href="/privacy.html">Privacy & data</a>
+            </p>
+          )}
           {ledger.state === 'signed-out' ? (
             <a className="primary-button" href="/auth/google">
               Continue with Google
@@ -179,6 +190,7 @@ export default function App() {
                     redirect: 'manual',
                   });
                   if (response.type !== 'opaqueredirect' && !response.ok) throw Error();
+                  await lockCache().catch(() => {});
                   await clearPrivateData().catch(() => {});
                   window.location.assign('/');
                 } catch {

@@ -121,22 +121,31 @@ export async function restoreMissing(
       .map((field) => "json_extract(j.value,'$." + field + "')")
       .join(',');
     // Keep individual JSON parameters small while committing the entire restore atomically.
-    const chunks = [];
-    for (let offset = 0; offset < backup[key].length; offset += 250) {
+    const chunks: D1PreparedStatement[] = [];
+    let rows: unknown[] = [],
+      bytes = 2;
+    const flush = () => {
+      if (!rows.length) return;
       chunks.push(
         db
           .prepare(
             `INSERT INTO ${table}(owner_id,${columns[key].join(',')}) SELECT ?,${extracted} FROM json_each(?) j WHERE NOT EXISTS(SELECT 1 FROM ${table} existing WHERE existing.owner_id=? AND existing.id=json_extract(j.value,'$.id'))`,
           )
-          .bind(user.id, JSON.stringify(backup[key].slice(offset, offset + 250)), user.id),
+          .bind(user.id, JSON.stringify(rows), user.id),
       );
+      rows = [];
+      bytes = 2;
+    };
+    for (const row of backup[key]) {
+      const size = new TextEncoder().encode(JSON.stringify(row)).byteLength + 1;
+      if (rows.length >= 1000 || bytes + size > 1_500_000) flush();
+      rows.push(row);
+      bytes += size;
     }
+    flush();
     return chunks;
   });
-  await db.batch([
-    db.prepare('INSERT INTO users(id) VALUES(?) ON CONFLICT(id) DO NOTHING').bind(user.id),
-    ...statements,
-  ]);
+  if (statements.length) await db.batch(statements);
   return json({ restored: true });
 }
 export async function featureRoute(

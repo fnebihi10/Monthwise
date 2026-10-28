@@ -14,13 +14,18 @@ const account = (name = 'Bank') => ({
   kind: 'bank',
   openingBalanceCents: 10000,
 });
-function call(
+async function call(
   path: string,
   method = 'GET',
   data?: unknown,
   user: Identity | null = alice,
   origin = 'http://localhost',
 ) {
+  // These API tests inject identities instead of running the Google callback.
+  if (user)
+    await env.DB.prepare('INSERT INTO users(id) VALUES(?) ON CONFLICT(id) DO NOTHING')
+      .bind(user.id)
+      .run();
   return handleApi(
     new Request('http://localhost/api/' + path, {
       method,
@@ -44,7 +49,13 @@ beforeAll(async () => {
     }),
   );
   const db = await mf.getD1Database('DB');
-  for (const sql of ['0001_ledger.sql', '0003_planning.sql', '0004_ledger_versions.sql']
+  for (const sql of [
+    '0001_ledger.sql',
+    '0002_google_sessions.sql',
+    '0003_planning.sql',
+    '0004_ledger_versions.sql',
+    '0005_public_access.sql',
+  ]
     .map((name) => readFileSync(new URL('../migrations/' + name, import.meta.url), 'utf8'))
     .join(';')
     .split(/;(?!\s*END\b)/i)
