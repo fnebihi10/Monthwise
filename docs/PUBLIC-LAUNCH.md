@@ -35,7 +35,7 @@ Backup export validates its limits before download. A ledger whose JSON exceeds 
 
 Create a separate production Google Cloud project and a Web application OAuth client. In Google Auth Platform:
 
-1. Set the app name to Monthwise and the support/contact email to `nebigifatlind@gmail.com`, as supplied by the operator.
+1. Set the app name to Monthwise and the support/contact email to `nebihifatlind@gmail.com`, as supplied by the operator.
 2. Configure the audience as External and review the production publishing requirements. Request only `openid` and `email`.
 3. Add the exact authorized redirect URI: `https://monthwise.online/auth/google/callback`.
 4. The planned homepage is `https://monthwise.online/` and the privacy page is `/privacy.html` on that host. These pages become available after the first configured deployment.
