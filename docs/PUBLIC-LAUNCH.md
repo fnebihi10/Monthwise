@@ -1,5 +1,7 @@
 # Public Monthwise launch
 
+For the latest deployment progress and remaining blockers, see [Public deployment handoff](PUBLIC-DEPLOYMENT.md). The preparation notes below describe the state before the first upload.
+
 ## Status on October 28, 2026
 
 The existing personal Worker is `monthwise`, at https://monthwise.fnebihi10.workers.dev. Its most recent deployment inspected during this work was October 24. Pushing to GitHub did not update it.
