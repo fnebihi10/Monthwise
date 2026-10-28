@@ -200,7 +200,18 @@ export function MonthView({
             <h2>
               Where it went<span className="title-dot">.</span>
             </h2>
-            <div className="spending-bar" aria-label="Expense distribution">
+            <div
+              className="spending-bar"
+              role="img"
+              aria-label={
+                categoryTotals.length
+                  ? 'Expense distribution: ' +
+                    categoryTotals
+                      .map((category) => category.name + ' ' + euro(category.amount))
+                      .join(', ')
+                  : 'No expenses recorded'
+              }
+            >
               {categoryTotals.map((category, i) => (
                 <span
                   key={category.name}

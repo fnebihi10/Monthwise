@@ -1,5 +1,34 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { emptySnapshot } from '../src/models';
+
+test('an empty ledger exposes an accessible expense chart', async ({ page }) => {
+  const user = { id: 'empty-accessibility-user', email: 'Empty local workspace', local: true };
+  await page.route('**/api/ledger/version', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ ownerId: user.id, version: 1 }),
+    }),
+  );
+  await page.route('**/api/ledger?*', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        snapshot: { ...emptySnapshot, user },
+        version: 1,
+        next: { entries: null, transfers: null },
+      }),
+    }),
+  );
+  await page.goto('/');
+  await expect(page.getByRole('img', { name: 'No expenses recorded', exact: true })).toBeVisible();
+  const scan = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+  expect(scan.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) }))).toEqual(
+    [],
+  );
+});
 
 test('main views and entry dialog meet automated WCAG A/AA checks', async ({ page, request }) => {
   const id = crypto.randomUUID();

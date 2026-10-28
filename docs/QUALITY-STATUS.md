@@ -12,6 +12,8 @@ The first run measured about 849 ms for restore, 2,344 ms for 49 pages, 194 ms f
 
 Accessibility scans found and fixed muted-text/month-number contrast and a brand-link accessible-name mismatch. They cover six main views and the entry dialog. Manual screen-reader, zoom, keyboard and touch-target evaluation remain useful; zero automated violations is not certification.
 
+The first expanded hosted CI run also caught a missing chart role on an empty ledger. The chart now exposes an image role with either a full category/amount description or an explicit empty-state name. A dedicated empty-ledger fixture covers this case independently of persistent local test data.
+
 The frontend separates monthly/yearly views, entry forms and account management. A memoized one-pass index replaces repeated full-ledger scans for reports and Excel summaries. Unchanged snapshots preserve entry-array identity. Full history still resides in browser memory within the 25,000-record cap.
 
 The dependency audit reports zero known advisories after updating Wrangler and patching transitive HTTP/UUID dependencies. Audit results are time-specific and checked again in CI.
