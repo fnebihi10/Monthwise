@@ -4,7 +4,7 @@
 
 The existing personal Worker is `monthwise`, at https://monthwise.fnebihi10.workers.dev. Its most recent deployment inspected during this work was October 24. Pushing to GitHub did not update it.
 
-The public version is prepared on `feat/public-multiuser`. It has not been deployed. The original GitHub `main` checks passed. Public sign-in requires separate Google configuration before release.
+The public version is prepared on `feat/public-multiuser`. It has not been deployed. The original GitHub `main` checks passed. The operator created the Monthwise Online Google project and supplied its public client ID. The client secret, domain connection and Google audience still require configuration before release.
 
 The public environment targets a new Worker, `monthwise-public`, and the existing unused D1 database `monthwise-production`. Read-only inspection confirmed zero tables in that database on October 28. Your personal data stays in `monthwise-staging`. Neither remote database was changed during implementation.
 
@@ -37,8 +37,8 @@ Create a separate production Google Cloud project and a Web application OAuth cl
 
 1. Set the app name to Monthwise and the support/contact email to `nebigifatlind@gmail.com`, as supplied by the operator.
 2. Configure the audience as External and review the production publishing requirements. Request only `openid` and `email`.
-3. Add the exact authorized redirect URI: `https://monthwise-public.fnebihi10.workers.dev/auth/google/callback`.
-4. The planned homepage is `https://monthwise-public.fnebihi10.workers.dev/` and the privacy page is `/privacy.html` on that host. These pages become available after the first configured deployment.
+3. Add the exact authorized redirect URI: `https://monthwise.online/auth/google/callback`.
+4. The planned homepage is `https://monthwise.online/` and the privacy page is `/privacy.html` on that host. These pages become available after the first configured deployment.
 5. Put the new client ID in `env.public.vars.GOOGLE_CLIENT_ID` in `wrangler.jsonc`.
 
 The callback is an endpoint, not a page to open manually. Store the client secret in Cloudflare's secret storage; do not put it in source, GitHub, screenshots or chat. The owner can enter it locally with `npx wrangler secret put GOOGLE_CLIENT_SECRET --env public` when the public Worker exists. If Wrangler offers to create the new public Worker for secret setup, verify that the name is `monthwise-public` before proceeding.
@@ -49,7 +49,7 @@ Official references: [Google production readiness](https://developers.google.com
 
 ## Step 2 — Review the concrete release
 
-Review the privacy page, support address, limits and database bindings. Run `npm run check`. Run `node scripts/check-public-config.mjs`; it deliberately fails while the production client ID is missing. Review and merge the feature branch before releasing.
+Review the privacy page, support address, limits and database bindings. Run `npm run check`. Run `node scripts/check-public-config.mjs`; it checks local settings only and does not verify the remote client secret, domain activation or Google audience. Review and merge the feature branch before releasing.
 
 Check `wrangler.jsonc`: public uses database ID `333feb62-aa82-41b7-8b03-7d330e45eff5`; personal uses `33853f06-8e98-4422-89cb-4bd2221cc442`. Do not interchange them.
 
