@@ -6,7 +6,7 @@ import {
   type Transfer,
 } from './models';
 import type { Budget, Plan, Goal, Allocation } from './planning';
-import { assertBackupSize, MAX_BACKUP_RECORDS } from './backupLimits';
+import { assertBackupSize, MAX_BACKUP_RECORDS, MAX_LEDGER_RECORDS } from './backupLimits';
 export type Backup = {
   format: 'monthwise';
   version: 1;
@@ -178,6 +178,17 @@ export function validateBackup(value: unknown): Backup {
     amountCents: cents(r.amountCents),
     date: date(r.date),
   }));
+  if (
+    accounts.length +
+      entries.length +
+      transfers.length +
+      budgets.length +
+      plans.length +
+      goals.length +
+      allocations.length >
+    MAX_LEDGER_RECORDS
+  )
+    throw Error('Backups support up to 25,000 total ledger records.');
   const accountIds = new Set(accounts.map((a) => a.id)),
     entryIds = new Set(entries.map((e) => e.id)),
     goalIds = new Set(goals.map((g) => g.id));

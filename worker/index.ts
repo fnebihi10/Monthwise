@@ -5,6 +5,10 @@ import { authenticate, type AuthEnv, type Identity } from './auth';
 import { handleAuth } from './google-auth';
 import { expenseCategories } from '../src/models';
 import type { LedgerPage } from '../src/models';
+import { secureResponse, edgeGuard, userRate, limited } from './security';
+import { deleteAccount } from './account';
+import { failureResponse } from './diagnostics';
+import { health } from './health';
 export type Env = AuthEnv & { DB: D1Database; ASSETS?: Fetcher };
 export async function snapshot(db: D1Database, user: Identity): Promise<Snapshot> {
   return (await readSnapshot(db, user)).snapshot;
@@ -76,11 +80,26 @@ export async function handleApi(
   request: Request,
   env: Env,
   resolveIdentity: (request: Request, env: AuthEnv) => Promise<Identity | null> = authenticate,
+  requestId = crypto.randomUUID(),
 ): Promise<Response> {
   try {
     const url = new URL(request.url);
     const user = await resolveIdentity(request, env);
     if (!user) return json({ error: 'Sign in to open your ledger.' }, 401);
+    if (
+      !user.local &&
+      !(await env.DB.prepare('SELECT id FROM users WHERE id=?').bind(user.id).first())
+    )
+      return json({ error: 'Sign in again to open your ledger.' }, 401);
+    if (request.method === 'GET') {
+      await userRate(env.DB, user.id, 'read', 240);
+      if (
+        env.ACCESS_MODE === 'public' &&
+        (url.pathname === '/api/backup' ||
+          (url.pathname === '/api/ledger' && url.searchParams.get('paged') !== '1'))
+      )
+        await userRate(env.DB, user.id, 'export', 6);
+    }
     if (request.method === 'GET' && url.pathname === '/api/ledger/version') {
       const row = await env.DB.prepare('SELECT version FROM ledger_versions WHERE owner_id=?')
         .bind(user.id)
@@ -129,11 +148,17 @@ export async function handleApi(
           'Retry-After': '60',
         },
       });
-    await env.DB.prepare('INSERT INTO users(id) VALUES(?) ON CONFLICT(id) DO NOTHING')
-      .bind(user.id)
-      .run();
+    // Hosted users are created only by a fresh Google callback, never by a stale save/restore.
+    if (user.local)
+      await env.DB.prepare('INSERT INTO users(id) VALUES(?) ON CONFLICT(id) DO NOTHING')
+        .bind(user.id)
+        .run();
     const data = await body(request);
     const path = url.pathname;
+    if (path === '/api/restore' && env.ACCESS_MODE === 'public')
+      await userRate(env.DB, user.id, 'restore', 3);
+    if (path === '/api/account/delete' && request.method === 'POST')
+      return await deleteAccount(request, env.DB, user, data.confirmation);
     const feature = await featureRoute(path, request.method, data, env.DB, user, () =>
       snapshot(env.DB, user),
     );
@@ -271,21 +296,51 @@ export async function handleApi(
     }
     throw new ApiError(404, 'That action does not exist.');
   } catch (error) {
+    if (error instanceof ApiError && error.status === 429) return limited(error.message);
     if (error instanceof ApiError) return json({ error: error.message }, error.status);
+    if (error instanceof Error && error.message.includes('ledger_quota_exceeded'))
+      return json(
+        {
+          error:
+            'Your ledger has reached its 25,000-record limit. Export a backup before removing records.',
+        },
+        409,
+      );
     if (error instanceof Error && /UNIQUE constraint failed/.test(error.message))
       return json(
         { error: 'This change is already recorded. Refresh your ledger before retrying.' },
         409,
       );
-    console.error('Ledger request failed:', error instanceof Error ? error.name : 'UnknownError');
-    return json({ error: 'Unable to save or load your ledger. Please try again.' }, 500);
+    return failureResponse('ledger', requestId, 500);
   }
 }
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const path = new URL(request.url).pathname;
-    if (path.startsWith('/auth/')) return handleAuth(request, env);
-    if (path.startsWith('/api/')) return handleApi(request, env);
-    return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
+    const requestId = crypto.randomUUID();
+    try {
+      let response: Response;
+      const guarded =
+        path.startsWith('/api/') || path.startsWith('/auth/')
+          ? await edgeGuard(request, env)
+          : null;
+      if (guarded) response = guarded;
+      else if (path === '/api/health' && request.method === 'GET') response = await health(env);
+      else if (path.startsWith('/auth/'))
+        response = await handleAuth(request, env, undefined, requestId);
+      else if (path.startsWith('/api/'))
+        response = await handleApi(request, env, authenticate, requestId);
+      else
+        response = env.ASSETS
+          ? await env.ASSETS.fetch(request)
+          : new Response('Not found', { status: 404 });
+      return secureResponse(response, env.MODE === 'production', requestId);
+    } catch {
+      return secureResponse(
+        failureResponse('worker', requestId, 503),
+        env.MODE === 'production',
+        requestId,
+      );
+    }
   },
 };

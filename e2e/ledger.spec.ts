@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 import { test, expect } from '@playwright/test';
+import type { Snapshot } from '../src/models';
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() =>
     Object.defineProperty(globalThis.crypto, 'randomUUID', { value: undefined }),
@@ -221,4 +222,43 @@ test('checks revisions without downloading unchanged history and refreshes after
   await page.getByRole('textbox', { name: 'Search transactions' }).fill(merchant);
   await expect(page.getByRole('button', { name: 'Edit ' + merchant, exact: true })).toBeVisible();
   expect(pages).toBeGreaterThan(0);
+});
+
+test('never falls back to another account cache when switching users and loading fails', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Add an entry', exact: true }).waitFor();
+  const original = (await (await page.request.get('/api/ledger')).json()) as Snapshot;
+  expect(original.accounts.length).toBeGreaterThan(0);
+  await page.route('**/api/ledger/version', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ ownerId: 'google:another-user', version: 1 }),
+    }),
+  );
+  await page.route('**/api/ledger?*', (route) => route.abort('failed'));
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Try again', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add an entry', exact: true })).not.toBeVisible();
+  const cacheLocked = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const opening = indexedDB.open('monthwise-private');
+      opening.onsuccess = () => resolve(opening.result);
+      opening.onerror = () => reject(opening.error);
+    });
+    const locked = await new Promise<boolean>((resolve, reject) => {
+      const read = db.transaction('meta').objectStore('meta').get('locked');
+      read.onsuccess = () => resolve(read.result);
+      read.onerror = () => reject(read.error);
+    });
+    db.close();
+    return locked;
+  });
+  expect(cacheLocked).toBe(true);
+  await context.setOffline(true);
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.getByRole('button', { name: 'Add an entry', exact: true })).not.toBeVisible();
+  await context.setOffline(false);
 });

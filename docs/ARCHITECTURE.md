@@ -2,11 +2,11 @@
 
 ## Current version
 
-Monthwise is an owner-only personal finance PWA built with React 19, strict TypeScript, Vite, Cloudflare Workers and D1. The browser calls same-origin Worker endpoints. Cloudflare serves the built static assets.
+Monthwise is a personal finance PWA with owner-only and explicit public access modes built with React 19, strict TypeScript, Vite, Cloudflare Workers and D1. The browser calls same-origin Worker endpoints. Cloudflare serves the built static assets.
 
 ## Identity and request protection
 
-Google OAuth uses PKCE, nonce and a one-time browser-bound login attempt. oauth4webapi performs the code exchange; jose verifies signed ID tokens, issuer, audience, expiry, nonce, verified email and authorized party. Only OWNER_EMAIL is allowed. Ownership uses the stable Google subject.
+Google OAuth uses PKCE, nonce and a one-time browser-bound login attempt. oauth4webapi performs the code exchange; jose verifies signed ID tokens, issuer, audience, expiry, nonce, verified email and authorized party. Owner mode permits only OWNER_EMAIL. Explicit public mode permits any correctly verified Google identity. Unknown access modes fail closed. Ownership always uses the stable Google subject. Public launch uses a separate Worker and database; see PUBLIC-LAUNCH.md.
 
 Sessions last seven days. D1 stores only the SHA-256 hash of a random opaque token. The browser cookie is host-only, Secure, HttpOnly and SameSite=Lax. Every authenticated request rechecks the owner configuration. Logout revokes the session and clears private browser storage across tabs. Google access and refresh tokens are not retained.
 
@@ -40,9 +40,9 @@ Queued entries use stable IDs. Reconnection retries network failures, HTTP 408/4
 
 ## Backup and restore
 
-Version 1 JSON includes accounts, entries, transfers, budgets, plans, goals and allocations. Export and restore share limits: 8,000,000 UTF-8 bytes and 25,000 records per collection. Exports are compact JSON and validate before download, so the app does not produce a backup that exceeds its own restore contract. Oversized ledgers require an independent D1 database export. The restore request envelope has an additional 1,024-byte allowance.
+Version 1 JSON includes accounts, entries, transfers, budgets, plans, goals and allocations. Export and restore share limits: 8,000,000 UTF-8 bytes and 25,000 total records. Exports are compact JSON and validate before download, so the app does not produce a backup that exceeds its own restore contract. Oversized ledgers require an independent D1 database export. The restore request envelope has an additional 1,024-byte allowance.
 
-Restore validates ownership, IDs, amounts, dates, links, duplicate monthly keys and conflicts before writing. It merges missing records and never replaces changed records. Inserts use JSON chunks of at most 250 records in one atomic D1 batch, avoiding oversized individual SQL parameters. CSV and lazily loaded Excel reports support review; JSON is the app recovery format.
+Restore validates ownership, IDs, amounts, dates, links, duplicate monthly keys and conflicts before writing. It merges missing records and never replaces changed records. Inserts use JSON chunks of at most 1,000 records in one atomic D1 batch, avoiding oversized individual SQL parameters. CSV and lazily loaded Excel reports support review; JSON is the app recovery format.
 
 ## Environments and release checks
 
@@ -51,3 +51,11 @@ Local development uses .wrangler/state; browser tests use separate .wrangler/e2e
 GitHub Actions runs formatting, type checking, unit/integration tests, the production build, Edge browser tests and the offline PWA test using Node 22.21.0. It does not deploy or use cloud secrets. Run npm run check locally for the same checks.
 
 Physical iPhone installation, standalone cookie behavior and real owner sign-in still require device/release verification. These checks are separate from the automated local tests.
+
+## Public access safeguards
+
+Migration 0005 adds durable read/export/restore counters, indexed session ownership and issuance timestamps, and per-owner ledger usage with database-enforced quotas. Public mode requires its Cloudflare edge limiter and verified ingress IP before handling API/auth requests. Detailed settings and their limits are documented in PUBLIC-LAUNCH.md.
+
+All user sessions can be revoked through account deletion, which requires a sign-in within ten minutes. At most ten sessions are retained per user. Deletion removes only that user?s live database rows atomically; backups and other devices have independent retention. Static and Worker responses receive security headers including CSP and frame blocking.
+
+The browser locks a prior owner?s cache before loading a different authenticated owner and never falls back to that prior snapshot after a failed load. Saving a new snapshot atomically replaces cached snapshots and selects the current owner. Pending entries remain owner-scoped.

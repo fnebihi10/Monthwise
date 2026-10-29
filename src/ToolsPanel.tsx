@@ -3,6 +3,7 @@ import { serializeBackup, validateBackup, transactionCsv, type Backup } from './
 import { MAX_BACKUP_BYTES } from './backupLimits';
 import { download } from './download';
 import { today, type Shared } from './panelTypes';
+import { AccountPanel } from './AccountPanel';
 export function ToolsPanel({
   data,
   busy,
@@ -40,7 +41,7 @@ export function ToolsPanel({
           <p className="muted">
             JSON includes accounts, transactions, transfers, budgets, plans, goals and allocations.
             It contains private financial information. Save it somewhere you trust. Backups support
-            up to 8 MB and 25,000 records per collection.
+            up to 8 MB and 25,000 total records.
           </p>
           {pendingCount > 0 && (
             <p className="form-error">Sync your pending entries before backing up or restoring.</p>
@@ -169,6 +170,7 @@ export function ToolsPanel({
           )}
         </section>
       </div>
+      {!data.user.local && <AccountPanel pendingCount={pendingCount} busy={busy} />}
       <section className="release-section install-section">
         <p className="eyebrow">MAKE IT AN EVERYDAY THING</p>
         <h2>

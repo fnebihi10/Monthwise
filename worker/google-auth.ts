@@ -1,6 +1,8 @@
 import * as oauth from 'oauth4webapi';
+import { recordFailure } from './diagnostics';
 import {
-  allowedOwner,
+  allowedUser,
+  accessConfigured,
   configuredOrigin,
   cookie,
   hashToken,
@@ -85,6 +87,7 @@ export async function handleAuth(
   request: Request,
   env: GoogleAuthEnv,
   services: AuthServices = { exchange: exchangeGoogleCode },
+  requestId = crypto.randomUUID(),
 ): Promise<Response> {
   const url = new URL(request.url);
   const origin = configuredOrigin(env);
@@ -106,7 +109,7 @@ export async function handleAuth(
       return redirect('/', [cookie(SESSION_COOKIE, '', 0), cookie(LOGIN_COOKIE, '', 0)]);
     }
     if (request.method !== 'GET') return problem('This sign-in action is not available.', 405);
-    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.OWNER_EMAIL)
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !accessConfigured(env))
       return problem('Google sign-in setup is not finished yet.', 503);
     const now = Math.floor(Date.now() / 1000);
     if (url.pathname === '/auth/google') {
@@ -142,7 +145,7 @@ export async function handleAuth(
         code_challenge: await oauth.calculatePKCECodeChallenge(verifier),
         code_challenge_method: 'S256',
         prompt: 'select_account',
-        login_hint: env.OWNER_EMAIL,
+        ...(env.ACCESS_MODE !== 'public' && env.OWNER_EMAIL ? { login_hint: env.OWNER_EMAIL } : {}),
       }).toString();
       return redirect(authorization.href, [cookie(LOGIN_COOKIE, browser, 600)]);
     }
@@ -180,18 +183,21 @@ export async function handleAuth(
           true,
         );
       const user = await services.exchange(codes[0], attempt, state, env);
-      if (user.local || !user.id.startsWith('google:') || !allowedOwner(user.email, env))
+      if (user.local || !user.id.startsWith('google:') || !allowedUser(user.email, env))
         return problem('This is a private app. That Google account is not allowed.', 403, true);
       const token = randomToken();
       const old = readCookie(request, SESSION_COOKIE);
       await env.DB.batch([
         env.DB.prepare('INSERT INTO users(id) VALUES(?) ON CONFLICT(id) DO NOTHING').bind(user.id),
         env.DB.prepare(
-          'INSERT INTO sessions(token_hash,user_id,email,expires_at) VALUES(?,?,?,?)',
-        ).bind(await hashToken(token), user.id, user.email, now + SESSION_SECONDS),
+          'INSERT INTO sessions(token_hash,user_id,email,expires_at,issued_at) VALUES(?,?,?,?,?)',
+        ).bind(await hashToken(token), user.id, user.email, now + SESSION_SECONDS, now),
         env.DB.prepare('DELETE FROM sessions WHERE token_hash=?').bind(
           old ? await hashToken(old) : '',
         ),
+        env.DB.prepare(
+          'DELETE FROM sessions WHERE user_id=? AND token_hash NOT IN (SELECT token_hash FROM sessions WHERE user_id=? ORDER BY issued_at DESC,rowid DESC LIMIT 10)',
+        ).bind(user.id, user.id),
       ]);
       return redirect('/', [
         cookie(SESSION_COOKIE, token, SESSION_SECONDS),
@@ -201,8 +207,10 @@ export async function handleAuth(
     return problem('This page does not exist.', 404);
   } catch {
     // Never log authorization codes, cookies, ID tokens or client secrets.
+    recordFailure('auth', requestId, 401);
     return problem(
-      'Sign-in could not be completed. Check that you selected the owner account, then try again.',
+      'Sign-in could not be completed. Please select a verified Google account and try again. Reference: ' +
+        requestId,
       401,
       true,
     );

@@ -46,13 +46,23 @@ export const savePending = (value: PendingEntry) =>
   op('pending', 'readwrite', (s) => s.put(value, value.id));
 export const removePending = (id: string) => op('pending', 'readwrite', (s) => s.delete(id));
 export async function saveSnapshot(value: Snapshot) {
-  await op('snapshots', 'readwrite', (s) => s.put(value, value.user.id));
-  await op('meta', 'readwrite', (s) => s.put(value.user.id, 'owner'));
-  await op('meta', 'readwrite', (s) => s.put(false, 'locked'));
+  const database = await db();
+  await new Promise<void>((resolve, reject) => {
+    const tx = database.transaction(['snapshots', 'meta'], 'readwrite');
+    // Retain only the currently authenticated snapshot on shared browsers.
+    tx.objectStore('snapshots').clear();
+    tx.objectStore('snapshots').put(value, value.user.id);
+    tx.objectStore('meta').put(value.user.id, 'owner');
+    tx.objectStore('meta').put(false, 'locked');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
 }
 export async function lockCache() {
   await op('meta', 'readwrite', (s) => s.put(true, 'locked'));
 }
+export const cacheOwner = () => op<string | undefined>('meta', 'readonly', (s) => s.get('owner'));
 export async function readCached() {
   if (await op<boolean>('meta', 'readonly', (s) => s.get('locked'))) return null;
   const owner = await op<string>('meta', 'readonly', (s) => s.get('owner'));
@@ -73,6 +83,7 @@ export async function clearPrivateData() {
   }
 }
 export function withPending(base: Snapshot, pending: PendingEntry[]): Snapshot {
+  if (!pending.length) return base;
   const ids = new Set(base.entries.map((e) => e.id));
   return {
     ...base,

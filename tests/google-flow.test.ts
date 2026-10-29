@@ -22,6 +22,7 @@ beforeAll(async () => {
     '0002_google_sessions.sql',
     '0003_planning.sql',
     '0004_ledger_versions.sql',
+    '0005_public_access.sql',
   ]) {
     for (const sql of readFileSync(new URL('../migrations/' + filename, import.meta.url), 'utf8')
       .split(/;(?!\s*END\b)/i)

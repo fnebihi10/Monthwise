@@ -32,6 +32,38 @@ async function token(
     .sign(privateKey);
 }
 describe('Google owner-only identity verification', () => {
+  it('accepts other verified Google users only when public access is explicitly configured', async () => {
+    const publicEnv = { GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID, ACCESS_MODE: 'public' };
+    expect(
+      await verifyGoogleIdToken(
+        await token({ email: 'new-user@example.test' }),
+        publicEnv,
+        'expected-nonce',
+        resolver,
+      ),
+    ).toMatchObject({ id: 'google:stable-google-subject', email: 'new-user@example.test' });
+    for (const claims of [{ email_verified: false }, { email: 'invalid' }, { nonce: 'wrong' }]) {
+      await expect(
+        verifyGoogleIdToken(await token(claims), publicEnv, 'expected-nonce', resolver),
+      ).rejects.toThrow();
+    }
+    await expect(
+      verifyGoogleIdToken(
+        await token(),
+        { ...env, ACCESS_MODE: 'typo' },
+        'expected-nonce',
+        resolver,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      verifyGoogleIdToken(
+        await token(),
+        { GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID },
+        'expected-nonce',
+        resolver,
+      ),
+    ).rejects.toThrow();
+  });
   it('accepts the verified owner and keys records by Google subject', async () => {
     expect(await verifyGoogleIdToken(await token(), env, 'expected-nonce', resolver)).toEqual({
       id: 'google:stable-google-subject',

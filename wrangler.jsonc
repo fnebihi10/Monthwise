@@ -16,6 +16,7 @@
     "APP_ORIGIN": "",
     "OWNER_EMAIL": "fatlindnebihi10@gmail.com",
     "GOOGLE_CLIENT_ID": "",
+    "ACCESS_MODE": "owner",
   },
   "d1_databases": [
     {
@@ -33,6 +34,7 @@
         "APP_ORIGIN": "",
         "OWNER_EMAIL": "",
         "GOOGLE_CLIENT_ID": "",
+        "ACCESS_MODE": "owner",
       },
       "d1_databases": [
         {
@@ -50,6 +52,7 @@
         "APP_ORIGIN": "https://monthwise-staging.fnebihi10.workers.dev",
         "OWNER_EMAIL": "fatlindnebihi10@gmail.com",
         "GOOGLE_CLIENT_ID": "932682992741-ju7v0u16gbhu3j43fqdmt4fn6ndpsajh.apps.googleusercontent.com",
+        "ACCESS_MODE": "owner",
       },
       "d1_databases": [
         {
@@ -69,6 +72,7 @@
         "APP_ORIGIN": "https://monthwise.fnebihi10.workers.dev",
         "OWNER_EMAIL": "fatlindnebihi10@gmail.com",
         "GOOGLE_CLIENT_ID": "932682992741-ju7v0u16gbhu3j43fqdmt4fn6ndpsajh.apps.googleusercontent.com",
+        "ACCESS_MODE": "owner",
       },
       "d1_databases": [
         {
@@ -80,6 +84,55 @@
       ],
       "workers_dev": true,
       "preview_urls": false,
+    },
+    "public": {
+      "name": "monthwise-public",
+      "workers_dev": false,
+      "preview_urls": false,
+      "vars": {
+        "MODE": "production",
+        "ACCESS_MODE": "public",
+        "APP_ORIGIN": "https://monthwise.online",
+        "OWNER_EMAIL": "",
+        "SUPPORT_EMAIL": "nebihifatlind@gmail.com",
+        "GOOGLE_CLIENT_ID": "773217761093-9hj05p0rgieqpplsej2s2ds383o08f5f.apps.googleusercontent.com",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "monthwise-production",
+          "database_id": "333feb62-aa82-41b7-8b03-7d330e45eff5",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "ratelimits": [
+        {
+          "name": "EDGE_LIMITER",
+          "namespace_id": "840101",
+          "simple": {
+            "limit": 600,
+            "period": 60,
+          },
+        },
+      ],
+      "routes": [
+        {
+          "pattern": "monthwise.online",
+          "custom_domain": true,
+        },
+      ],
+      "observability": {
+        "enabled": true,
+        "redact_query_string": true,
+        "logs": {
+          "enabled": true,
+          "invocation_logs": false,
+          "head_sampling_rate": 1,
+        },
+        "traces": {
+          "enabled": false,
+        },
+      },
     },
   },
   "account_id": "ed9f9186f4199034f2499cf3da347885",

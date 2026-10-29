@@ -2,6 +2,7 @@ name: Project checks
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -24,9 +25,12 @@ jobs:
           node-version: '22.21.0'
           cache: npm
       - run: npm ci
+      - run: npm audit --audit-level=moderate
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
+      - run: npm run test:performance
+      - run: npm run test:recovery
       - run: npm run build
       - run: npx playwright install msedge
       - run: npm run test:e2e
@@ -35,5 +39,35 @@ jobs:
         if: failure()
         with:
           name: browser-test-results
+          path: test-results/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-performance
+          path: .wrangler/performance/latest.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.21.0'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run build
+      - run: npm run test:cross
+      - run: npm run test:pwa:cross
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cross-browser-results
           path: test-results/
           retention-days: 7

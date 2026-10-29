@@ -2,6 +2,7 @@ export class RequestError extends Error {
   constructor(
     public status: number,
     message: string,
+    public requestId?: string,
   ) {
     super(message);
   }
@@ -25,7 +26,16 @@ export async function request<T>(path: string, method = 'GET', data?: unknown): 
       'Could not read ledger data. Check your connection and sign-in.',
     );
   }
-  if (!response.ok) throw new RequestError(response.status, result.error || 'Request failed.');
+  if (!response.ok) {
+    const reference = response.headers.get('X-Request-ID');
+    const requestId = reference && /^[a-f0-9-]{36}$/i.test(reference) ? reference : undefined;
+    const message = result?.error || 'Request failed.';
+    throw new RequestError(
+      response.status,
+      message + (requestId && response.status >= 500 ? ' Reference: ' + requestId : ''),
+      requestId,
+    );
+  }
   return result as T;
 }
 

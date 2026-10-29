@@ -13,7 +13,11 @@ const user = { id: 'release-owner', email: 'owner@test', local: false },
 const accountId = crypto.randomUUID(),
   goalId = crypto.randomUUID(),
   billId = crypto.randomUUID();
-function call(path: string, method = 'GET', data?: unknown, identity = user) {
+async function call(path: string, method = 'GET', data?: unknown, identity = user) {
+  // Simulate the user row normally created by the verified Google callback.
+  await env.DB.prepare('INSERT INTO users(id) VALUES(?) ON CONFLICT(id) DO NOTHING')
+    .bind(identity.id)
+    .run();
   return handleApi(
     new Request('http://localhost/api/' + path, {
       method,
@@ -43,6 +47,7 @@ beforeAll(async () => {
     '0002_google_sessions.sql',
     '0003_planning.sql',
     '0004_ledger_versions.sql',
+    '0005_public_access.sql',
   ])
     for (const sql of readFileSync(new URL('../migrations/' + name, import.meta.url), 'utf8')
       .split(/;(?!\s*END\b)/i)
@@ -340,4 +345,39 @@ it('changes the ledger revision for edits and deletes, but not identical retried
   expect(await revision()).toBe(before + 2);
   await call('entries/' + entry.id, 'DELETE', { revision: 2 });
   expect(await revision()).toBe(before + 3);
+});
+
+it('restores escaped text without exceeding the database string parameter limit', async () => {
+  const identity = { id: 'escaped-backup-owner', email: 'escaped@example.test', local: false };
+  const id = crypto.randomUUID();
+  const backup: Backup = {
+    format: 'monthwise',
+    version: 1,
+    ownerId: identity.id,
+    createdAt: new Date().toISOString(),
+    accounts: [{ id, name: 'Bank', kind: 'bank', openingBalanceCents: 0, balanceCents: 0 }],
+    entries: Array.from({ length: 1000 }, () => ({
+      id: crypto.randomUUID(),
+      accountId: id,
+      kind: 'expense',
+      amountCents: 1,
+      date: '2026-10-28',
+      merchant: 'Shop' + '\0'.repeat(90),
+      category: 'Other',
+      note: '\0'.repeat(250),
+      revision: 1,
+    })),
+    transfers: [],
+    budgets: [],
+    plans: [],
+    goals: [],
+    allocations: [],
+  };
+  expect(new TextEncoder().encode(JSON.stringify(backup.entries)).byteLength).toBeGreaterThan(
+    2_000_000,
+  );
+  expect((await call('restore', 'POST', { backup }, identity)).status).toBe(200);
+  const restored = await ledger(identity);
+  expect(restored.entries).toHaveLength(1000);
+  expect(restored.entries[0].note).toBe('\0'.repeat(250));
 });

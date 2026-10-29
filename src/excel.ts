@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import type { Snapshot } from './models';
+import { buildReports } from './reports';
 const currency = '"\u20ac"#,##0.00;[Red]-"\u20ac"#,##0.00';
 const orange = 'FFB4472C',
   paper = 'FFF4F1E9',
@@ -46,14 +47,10 @@ export async function excelWorkbook(data: Snapshot) {
   setup(summary, [22, 22, 22, 24]);
   summary.addRow(['MONTHWISE', 'Income', 'Expenses', 'Income minus expenses']);
   header(summary, 1);
-  const months = [...new Set(data.entries.map((e) => e.date.slice(0, 7)))].sort();
+  const reports = buildReports(data.entries);
+  const months = [...reports.keys()].sort();
   for (const month of months) {
-    let income = 0,
-      expenses = 0;
-    for (const e of data.entries.filter((e) => e.date.startsWith(month + '-'))) {
-      if (e.kind === 'income') income += e.amountCents;
-      else expenses += e.amountCents;
-    }
+    const { income, spent: expenses } = reports.get(month)!;
     const row = summary.addRow([month, income / 100, expenses / 100, (income - expenses) / 100]);
     body(summary, row.number);
   }

@@ -1,33 +1,16 @@
 import { PlanningPanel, HistoryPanel, ToolsPanel } from './ReleasePanels';
-import { clearPrivateData } from './offline';
+import { clearPrivateData, lockCache } from './offline';
 import { download } from './download';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLedger } from './useLedger';
 import { AccountsPanel, EntryDialog } from './LedgerForms';
-import { expenseCategories, type LedgerEntry } from './models';
-import { entriesForMonth, euro, months, summarize } from './finance';
+import type { LedgerEntry } from './models';
+import { euro, months } from './finance';
+import { buildReports, reportForYear } from './reports';
+import { MonthView } from './MonthView';
+import { YearView } from './YearView';
+import { Arrow } from './Arrow';
 
-const categories = expenseCategories;
-const shortDate = (date: string) =>
-  new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', timeZone: 'UTC' }).format(
-    new Date(date + 'T12:00:00Z'),
-  );
-function Arrow({ direction = 'right' }: { direction?: 'right' | 'left' }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      aria-hidden="true"
-      style={{ transform: direction === 'left' ? 'rotate(180deg)' : undefined }}
-    >
-      <path d="M4 12h15m-6-6 6 6-6 6" />
-    </svg>
-  );
-}
 export default function App() {
   const ledger = useLedger();
   const { entries, accounts } = ledger;
@@ -38,9 +21,6 @@ export default function App() {
   const [view, setView] = useState<
     'month' | 'year' | 'accounts' | 'planning' | 'history' | 'tools'
   >('month');
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [showAll, setShowAll] = useState(false);
   const [message, setMessage] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
   const monthStrip = useRef<HTMLElement>(null);
@@ -53,32 +33,8 @@ export default function App() {
         strip.getBoundingClientRect().left -
         (strip.clientWidth - selected.clientWidth) / 2;
   }, [month, year, view]);
-  const monthEntries = entriesForMonth(entries, year, month);
-  const total = summarize(monthEntries);
-  const yearTotal = summarize(entries.filter((e) => e.date.startsWith(year + '-')));
-  const expenses = monthEntries.filter((e) => e.kind === 'expense');
-  const categoryTotals = categories
-    .map((name) => ({
-      name,
-      amount: expenses
-        .filter((e) => e.category === name)
-        .reduce((sum, e) => sum + e.amountCents, 0),
-    }))
-    .filter((c) => c.amount > 0)
-    .sort((a, b) => b.amount - a.amount);
-  const filtered = monthEntries
-    .filter(
-      (e) =>
-        (filter === 'all' || e.kind === filter) &&
-        [e.merchant, e.category, e.note].some((s) => s.toLowerCase().includes(query.toLowerCase())),
-    )
-    .sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
-  const displayed = showAll ? filtered : filtered.slice(0, 6);
-  useEffect(() => {
-    setShowAll(false);
-    setQuery('');
-    setFilter('all');
-  }, [year, month]);
+  const reports = useMemo(() => buildReports(entries), [entries]);
+  const yearReport = useMemo(() => reportForYear(reports, year), [reports, year]);
   function navigate(delta: number) {
     const next = new Date(Date.UTC(year, month + delta, 1));
     setYear(next.getUTCFullYear());
@@ -117,10 +73,21 @@ export default function App() {
             {ledger.state === 'loading'
               ? 'A moment.'
               : ledger.state === 'signed-out'
-                ? 'Just for you.'
+                ? 'Make room for your plans.'
                 : 'Let’s reconnect.'}
           </h1>
-          <p>{ledger.state === 'loading' ? 'Opening your ledger…' : ledger.error}</p>
+          <p>
+            {ledger.state === 'loading'
+              ? 'Opening your ledger…'
+              : ledger.state === 'signed-out'
+                ? 'Track income, expenses and savings goals, with a private ledger for your account.'
+                : ledger.error}
+          </p>
+          {ledger.state === 'signed-out' && (
+            <p className="muted">
+              {ledger.error} <a href="/privacy.html">Privacy & data</a>
+            </p>
+          )}
           {ledger.state === 'signed-out' ? (
             <a className="primary-button" href="/auth/google">
               Continue with Google
@@ -143,12 +110,11 @@ export default function App() {
     );
   const now = new Date();
   const defaultDay = year === now.getFullYear() && month === now.getMonth() ? now.getDate() : 1;
-  const retainedPercent = total.income ? Math.round((total.retained / total.income) * 100) : null;
   return (
     <div className="app">
       <header className="header">
-        <a className="brand" href="./" aria-label="Monthwise home">
-          <span className="brand-mark">
+        <a className="brand" href="./" title="Monthwise home">
+          <span className="brand-mark" aria-hidden="true">
             m<span>•</span>
           </span>
           monthwise<span className="brand-period">.</span>
@@ -179,6 +145,7 @@ export default function App() {
                     redirect: 'manual',
                   });
                   if (response.type !== 'opaqueredirect' && !response.ok) throw Error();
+                  await lockCache().catch(() => {});
                   await clearPrivateData().catch(() => {});
                   window.location.assign('/');
                 } catch {
@@ -264,8 +231,7 @@ export default function App() {
                 <span>{name.slice(0, 3)}</span>
                 <span
                   className={
-                    'month-dot ' +
-                    (entriesForMonth(entries, year, index).length ? 'has-entries' : '')
+                    'month-dot ' + (yearReport.months[index].entries.length ? 'has-entries' : '')
                   }
                 />
               </button>
@@ -390,262 +356,24 @@ export default function App() {
             onMessage={setMessage}
           />
         ) : view === 'month' ? (
-          <>
-            <section className="summary" aria-label="Monthly financial summary">
-              <div className="summary-cell">
-                <span className="eyebrow">01 / MONEY IN</span>
-                <p className="money">{euro(total.income)}</p>
-                <span className="metric-caption">Income received this month</span>
-              </div>
-              <div className="summary-cell">
-                <span className="eyebrow">02 / MONEY OUT</span>
-                <p className="money">{euro(total.spent)}</p>
-                <span className="metric-caption">{expenses.length} expenses, big and small</span>
-              </div>
-              <div className="summary-cell retained">
-                <span className="eyebrow">03 / WHAT STAYED</span>
-                <p className="money">{euro(total.retained)}</p>
-                <span className="metric-caption">
-                  {retainedPercent === null
-                    ? 'Add income to see your retained share'
-                    : retainedPercent + '% of this month’s income retained'}
-                </span>
-              </div>
-            </section>
-            <div className="workspace">
-              <section className="ledger">
-                <div className="section-heading">
-                  <div>
-                    <span className="eyebrow">THE DETAILS MATTER</span>
-                    <h2>
-                      Your ledger<span className="entry-count">{monthEntries.length}</span>
-                    </h2>
-                  </div>
-                  <span className="small-label">
-                    {months[month]} {year}
-                  </span>
-                </div>
-                <div className="ledger-controls">
-                  <label className="search">
-                    <svg
-                      aria-hidden="true"
-                      width="17"
-                      height="17"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <circle cx="10" cy="10" r="6" />
-                      <path d="m15 15 5 5" />
-                    </svg>
-                    <input
-                      aria-label="Search transactions"
-                      placeholder="Find a purchase, place, or note…"
-                      value={query}
-                      onChange={(e) => {
-                        setQuery(e.target.value);
-                        setShowAll(false);
-                      }}
-                    />
-                  </label>
-                  <select
-                    aria-label="Filter transactions"
-                    value={filter}
-                    onChange={(e) => {
-                      setFilter(e.target.value);
-                      setShowAll(false);
-                    }}
-                  >
-                    <option value="all">All entries</option>
-                    <option value="expense">Expenses</option>
-                    <option value="income">Income</option>
-                  </select>
-                </div>
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th scope="col">WHEN</th>
-                        <th scope="col">THE WHAT & WHERE</th>
-                        <th scope="col" className="category-column">
-                          CATEGORY
-                        </th>
-                        <th scope="col" className="amount-column">
-                          AMOUNT
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {displayed.map((entry) => (
-                        <tr key={entry.id}>
-                          <td className="date-cell">{shortDate(entry.date)}</td>
-                          <td>
-                            <button
-                              className="merchant edit-entry"
-                              disabled={ledger.busy}
-                              onClick={() => openEntry(entry)}
-                              aria-label={'Edit ' + entry.merchant}
-                            >
-                              {entry.merchant}
-                            </button>
-                            <span className="entry-note">
-                              {entry.note || entry.category}
-                              {' · ' +
-                                (accounts.find((a) => a.id === entry.accountId)?.name || 'Account')}
-                            </span>
-                          </td>
-                          <td className="category-column">
-                            <span className="category-tag">{entry.category}</span>
-                          </td>
-                          <td
-                            className={
-                              'amount-column entry-amount ' +
-                              (entry.kind === 'income' ? 'positive' : '')
-                            }
-                          >
-                            {entry.kind === 'income' ? '+' : '−'}
-                            {euro(entry.amountCents)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {!filtered.length && (
-                  <div className="empty-state">
-                    <span>Nothing here. Yet.</span>
-                    <p>
-                      {query || filter !== 'all'
-                        ? 'Try a different search or filter.'
-                        : 'Start this chapter with your first income or expense.'}
-                    </p>
-                    {!query && filter === 'all' && (
-                      <button className="text-button" onClick={() => openEntry()}>
-                        Add your first entry <Arrow />
-                      </button>
-                    )}
-                  </div>
-                )}
-                {filtered.length > 6 && (
-                  <button className="show-more" onClick={() => setShowAll((v) => !v)}>
-                    {showAll ? 'Show fewer entries' : `See all ${filtered.length} entries`}
-                    <Arrow direction={showAll ? 'left' : 'right'} />
-                  </button>
-                )}
-              </section>
-              <aside>
-                <section className="spending">
-                  <p className="eyebrow">FOLLOW THE MONEY</p>
-                  <h2>
-                    Where it went<span className="title-dot">.</span>
-                  </h2>
-                  <div className="spending-bar" aria-label="Expense distribution">
-                    {categoryTotals.map((category, i) => (
-                      <span
-                        key={category.name}
-                        style={{ flex: category.amount, background: `var(--chart-${i % 6})` }}
-                        title={category.name + ' ' + euro(category.amount)}
-                      />
-                    ))}
-                  </div>
-                  {categoryTotals.length ? (
-                    <ul className="category-list">
-                      {categoryTotals.map((category, i) => (
-                        <li key={category.name}>
-                          <span className="category-name">
-                            <i style={{ background: `var(--chart-${i % 6})` }} />
-                            {category.name}
-                          </span>
-                          <span>{euro(category.amount)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="muted">
-                      Your spending breakdown will appear after your first expense.
-                    </p>
-                  )}
-                </section>
-                <section className="note-card">
-                  <span className="note-star" aria-hidden="true">
-                    ✳
-                  </span>
-                  <p className="eyebrow">A NOTE ON YOUR NUMBERS</p>
-                  <h3>
-                    Left over isn’t
-                    <br />
-                    all spoken for.
-                  </h3>
-                  <p>
-                    “What stayed” is income minus expenses. It doesn’t include opening balances or
-                    unpaid bills. Review your commitments before making plans.
-                  </p>
-                </section>
-              </aside>
-            </div>
-            <section className="month-footer">
-              <button className="text-button" onClick={() => navigate(-1)}>
-                <Arrow direction="left" />
-                {months[(month + 11) % 12]}
-                {month === 0 ? ' ' + (year - 1) : ''}
-              </button>
-              <span>Every month has a story. This one is yours.</span>
-              <button className="text-button" onClick={() => navigate(1)}>
-                {months[(month + 1) % 12]}
-                {month === 11 ? ' ' + (year + 1) : ''}
-                <Arrow />
-              </button>
-            </section>
-          </>
+          <MonthView
+            report={yearReport.months[month]}
+            accounts={accounts}
+            busy={ledger.busy}
+            year={year}
+            month={month}
+            openEntry={openEntry}
+            navigate={navigate}
+          />
         ) : (
-          <>
-            <section className="annual-heading">
-              <p>
-                <strong>{euro(yearTotal.retained)}</strong> retained across the year
-              </p>
-              <span>
-                Income {euro(yearTotal.income)} · Expenses {euro(yearTotal.spent)}
-              </span>
-            </section>
-            <div className="year-grid">
-              {months.map((name, index) => {
-                const data = summarize(entriesForMonth(entries, year, index));
-                return (
-                  <button
-                    className="year-card"
-                    key={name}
-                    onClick={() => {
-                      setMonth(index);
-                      setView('month');
-                    }}
-                  >
-                    <span className="eyebrow">
-                      {String(index + 1).padStart(2, '0')} / {year}
-                    </span>
-                    <h2>
-                      {name}
-                      <Arrow />
-                    </h2>
-                    <dl>
-                      <div>
-                        <dt>In</dt>
-                        <dd>{euro(data.income)}</dd>
-                      </div>
-                      <div>
-                        <dt>Out</dt>
-                        <dd>{euro(data.spent)}</dd>
-                      </div>
-                      <div className="year-retained">
-                        <dt>Stayed</dt>
-                        <dd>{euro(data.retained)}</dd>
-                      </div>
-                    </dl>
-                  </button>
-                );
-              })}
-            </div>
-          </>
+          <YearView
+            year={year}
+            report={yearReport}
+            onMonth={(index) => {
+              setMonth(index);
+              setView('month');
+            }}
+          />
         )}
       </main>
       <footer className="site-footer">
