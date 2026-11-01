@@ -30,6 +30,10 @@ These scripts provide a verified procedure, not unattended off-device scheduling
 
 ## Dependencies and release checks
 
+The November 1 CI audit identified Vite's development-server advisory and a transitive Minimatch advisory. Vite now requires 6.4.5 or newer in the 6.x line. ExcelJS overrides select Archiver 7.x and Unzipper 0.12.x, removing the legacy Glob 7 dependency that is incompatible with patched Minimatch. Glob 14.0.3+ and Minimatch 11.0.1+ overrides address the archive chain's advisories. Workbook round trips, browser downloads and archive glob checks verify compatibility. Reassess these overrides when upstream dependencies update. Audit results are time-specific.
+
+Advisories: [Vite](https://github.com/advisories/GHSA-8g5g-mxqh-grgj), [Minimatch](https://github.com/advisories/GHSA-g3hv-75wg-m249), [Glob](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4).
+
 Run `npm audit --audit-level=moderate` and `npm run check` before release. The lockfile updates Wrangler to 4.155 and patches transitive dependencies. Overrides select patched Undici 7.x inside Miniflare and UUID 11.x inside ExcelJS. ExcelJS uses UUID's stable v4 API; unit/browser workbook round trips verify compatibility. A package audit is not a complete security audit.
 
 CI checks Edge on Windows and Chromium plus iPhone-emulated WebKit on Linux, including WCAG A/AA scans and offline reconnection. It also runs synthetic 25,000-record capacity and SQL recovery checks. Emulation and automated accessibility scans do not replace physical devices or assistive technology.
