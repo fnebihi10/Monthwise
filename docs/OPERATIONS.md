@@ -2,6 +2,10 @@
 
 ## Diagnostics after deploying this branch
 
+Run `npm run deployment:status` to inspect active Cloudflare versions. After deploying this maintenance change, `https://monthwise.online/api/version` returns the actual Worker version ID, optional tag and timestamp without accessing the database. It exposes no user records. Match that ID against Cloudflare Deployments; an untagged version cannot establish its source commit. Record the source commit alongside the Worker version whenever releasing.
+
+Run `npm run check:hosted` for public health, anonymous ledger denial and the Google redirect. `.github/workflows/uptime.yml` runs the same checks twice an hour after it reaches main, or manually through Actions. Enable failed-workflow notifications in GitHub; no notification recipient is automatically configured. The workflow requires no cloud credentials and never signs in. It is a basic availability check, not continuous coverage of authenticated errors.
+
 Unexpected API failures return a generic message and an internally generated `X-Request-ID`; the interface shows that reference for support. Search for the reference under the public Worker's Observability logs.
 
 Application failure events contain only event name, scope (`ledger`, `worker` or `auth`), generated request ID, status and timestamp. They omit exception messages/stacks, URLs, query strings, cookies, Google codes/tokens, IPs, emails, financial values and request bodies. Expected validation conflicts are not logged as server errors.

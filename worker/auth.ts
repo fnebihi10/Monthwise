@@ -1,6 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose';
 export type Identity = { id: string; email: string; local: boolean };
 export type AuthEnv = {
+  WORKER_VERSION?: { id: string; tag: string; timestamp: string };
   MODE?: string;
   APP_ORIGIN?: string;
   OWNER_EMAIL?: string;

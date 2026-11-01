@@ -1,4 +1,16 @@
-# Public deployment handoff — October 28, 2026
+# Public deployment status
+
+## Independently checked October 31, 2026
+
+Cloudflare deployment history reports 100% traffic on version `ff4c8c62-c65a-4be9-afe6-52e9d09e1f28`, created October 29 at 15:59:55 UTC. It has no release tag or source message; its exact Git commit is not established by that history. Main is at merge commit `1accfe8` before this maintenance work.
+
+Hosted checks returned health HTTP 200, anonymous ledger HTTP 401 and a Google sign-in redirect HTTP 303. `/api/version` returned 401 because that endpoint is not in the current release. These checks do not sign in or read financial data.
+
+This maintenance change adds `/api/version` using Cloudflare Worker version metadata, a hosted check command and a scheduled health workflow. These changes need deployment/pushing respectively before they operate remotely. No deployment or remote database change was performed during this maintenance work.
+
+Run `npm run deployment:status` to repeat the Cloudflare history check. In Cloudflare, open Workers & Pages → monthwise-public → Deployments and inspect the active version and traffic percentage. A Git commit identifies source; a Worker version ID identifies an uploaded executable; a deployment determines which version receives traffic. A Git push alone does not change the public app.
+
+Remaining acceptance work is tracked in [ACCEPTANCE.md](ACCEPTANCE.md). The sections below preserve historical events only and must not be treated as current setup instructions.
 
 ## Latest status
 

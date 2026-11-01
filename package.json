@@ -25,6 +25,8 @@
     "test:performance": "vitest run --config vitest.performance.config.ts",
     "backup:public": "node scripts/backup-public.mjs",
     "recovery:check": "node scripts/recovery-check.mjs",
+    "deployment:status": "wrangler deployments list --env public",
+    "check:hosted": "node scripts/check-hosted.mjs",
     "test:recovery": "node scripts/test-recovery.mjs",
     "test:pwa:cross": "playwright test --config playwright.pwa.cross.config.ts"
   },

@@ -1,5 +1,11 @@
 # Quality evidence and remaining release work
 
+## Maintenance verification — October 31, 2026
+
+This working-tree maintenance pass passed 57 unit/integration tests, TypeScript and production build, the synthetic SQL export/import recovery drill, the 25,000-record capacity test, and a public Worker deployment dry run including the version metadata binding. Earlier in the same review, all nine Edge browser tests passed before the maintenance changes. Cross-browser and physical-device checks were not rerun for this pass.
+
+Public endpoint checks passed health, anonymous ledger protection and the Google redirect. The active hosted version is recorded in PUBLIC-DEPLOYMENT.md. This pass did not deploy code, export production records, provision independent backup storage, configure notification recipients, or conduct real-account/device/user acceptance. The user chose synthetic recovery only. The health workflow and version endpoint need pushing/deployment before they become active. See ACCEPTANCE.md for the remaining checks.
+
 ## Local evidence
 
 `npm run check` covers TypeScript, formatting, unit/integration tests, capacity testing, synthetic SQL recovery, Edge, Chromium and iPhone-emulated WebKit, WCAG A/AA scans, and offline PWA reconnection. GitHub runs these categories on Windows and Linux.
@@ -31,7 +37,7 @@ The quality-pass changes require a separate public deployment. The prior public 
 - Confirm Google's production audience/publishing and any remaining brand/domain requirements.
 - Complete two-real-account and physical-iPhone offline/reconnection acceptance checks.
 - Deploy and verify diagnostics/health, then configure alerts and independent encrypted backups.
-- Review/merge the public pull request so main reflects the released product.
+- Public pull request #1 is merged into main (`1accfe8`). Deployment is separate from merging.
 - Collect real usage/performance evidence and conduct broader security/accessibility review before stronger claims.
 
 A score is subjective. The evidence supports a stronger tested beta, not a promise of perfection or a 9.5–10 rating.

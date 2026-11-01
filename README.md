@@ -1,8 +1,12 @@
 # Monthwise
 
-Personal app: https://monthwise.fnebihi10.workers.dev
+Public app: https://monthwise.online
 
-React 19, TypeScript, Vite, Cloudflare Workers and D1. The live personal deployment uses owner-only Google sign-in and retains its original database. A separate public multi-user environment is prepared on this branch; see [Public launch](docs/PUBLIC-LAUNCH.md) for its setup and release status.
+Owner-only personal deployment: https://monthwise.fnebihi10.workers.dev
+
+React 19, TypeScript, Vite, Cloudflare Workers and D1. The public multi-user app uses a separate database from the owner-only personal deployment. Public work was merged into main. See [Deployment status](docs/PUBLIC-DEPLOYMENT.md) for observed hosted state and [Acceptance checks](docs/ACCEPTANCE.md) for the remaining real-account and device checks.
+
+Run `npm run deployment:status` to read Cloudflare's deployment history, or `npm run check:hosted` to check public health, anonymous protection and the Google redirect. A Git push does not deploy the Worker. After the next deployment, `/api/version` will identify the running Worker version.
 
 New to the project? Read [How Monthwise works](docs/PROJECT-GUIDE.md) for a plain-language explanation of the stack, Google sign-in, database and deployment.
 

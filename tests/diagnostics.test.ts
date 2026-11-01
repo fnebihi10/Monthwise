@@ -7,6 +7,16 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+it('exposes deployment metadata without reading private ledger data', async () => {
+  const version = { id: crypto.randomUUID(), tag: 'release-test', timestamp: '2026-10-31' };
+  const response = await worker.fetch(new Request('https://app.test/api/version'), {
+    WORKER_VERSION: version,
+  } as Env);
+  expect(response.status).toBe(200);
+  expect(response.headers.get('Cache-Control')).toBe('no-store');
+  expect(await response.json()).toEqual({ version });
+});
+
 it('correlates server failures without logging private exception/request details', async () => {
   const logs = vi.spyOn(console, 'error').mockImplementation(() => {});
   const reference = crypto.randomUUID();

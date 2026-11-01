@@ -310,7 +310,7 @@ export default function App() {
                 ? 'Make room for what matters this month.'
                 : view === 'tools'
                   ? 'A separate copy. A familiar place on your phone.'
-                  : 'A place for every euro. A clearer picture of what?s yours.'}
+                  : 'A place for every euro. A clearer picture of what’s yours.'}
             </p>
           </div>
           <button className="primary-button" disabled={ledger.busy} onClick={() => openEntry()}>

@@ -1,5 +1,7 @@
 # Public Monthwise launch
 
+> Historical preparation notes below, not current status. The public app is deployed and the public branch was merged. Use [Deployment status](PUBLIC-DEPLOYMENT.md) and [Acceptance checks](ACCEPTANCE.md) for current evidence and remaining work. Do not repeat initialization steps based on this historical checklist.
+
 For the latest deployment progress and remaining blockers, see [Public deployment handoff](PUBLIC-DEPLOYMENT.md). The preparation notes below describe the state before the first upload.
 
 ## Status on October 28, 2026

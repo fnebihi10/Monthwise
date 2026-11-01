@@ -325,6 +325,8 @@ export default {
           ? await edgeGuard(request, env)
           : null;
       if (guarded) response = guarded;
+      else if (path === '/api/version' && request.method === 'GET')
+        response = json({ version: env.WORKER_VERSION ?? null });
       else if (path === '/api/health' && request.method === 'GET') response = await health(env);
       else if (path.startsWith('/auth/'))
         response = await handleAuth(request, env, undefined, requestId);

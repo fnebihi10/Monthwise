@@ -28,4 +28,4 @@ Monthwise helps its owner answer: what came in, what went out, what is committed
 
 ## Privacy and release
 
-This initial preview contains synthetic records and session-only changes. Real finance use waits for authenticated cloud persistence and tested recovery. Public portfolio demonstrations must use separate fictional data. Never put credentials or real financial records in Git.
+The deployed app uses authenticated cloud persistence, with a separate ledger for each verified Google identity. Offline entry creation queues changes on the device. Public portfolio demonstrations must use separate fictional data. Never put credentials or real financial records in Git. See ACCEPTANCE.md for real-account and physical-device checks that still need recorded evidence.
