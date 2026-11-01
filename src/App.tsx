@@ -100,11 +100,13 @@ export default function App() {
               Try again
             </button>
           ) : null}
-          <span className="muted">
-            {import.meta.env.DEV
-              ? 'Start the Monthwise backend with npm run dev.'
-              : 'Check your connection and try again.'}
-          </span>
+          {ledger.state === 'error' && (
+            <span className="muted">
+              {import.meta.env.DEV
+                ? 'Start the Monthwise backend with npm run dev.'
+                : 'Check your connection and try again.'}
+            </span>
+          )}
         </section>
       </div>
     );

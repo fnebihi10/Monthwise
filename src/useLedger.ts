@@ -91,7 +91,7 @@ export function useLedger() {
             await lockCache().catch(() => {});
             setSnapshot(emptySnapshot);
             setState('signed-out');
-            setError('Sign in again to sync your ledger. Pending entries remain on this device.');
+            setError('Sign in to open your ledger.');
             throw e;
           }
           if (!(e instanceof RequestError)) {
