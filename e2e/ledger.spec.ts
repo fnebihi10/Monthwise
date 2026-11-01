@@ -27,7 +27,7 @@ test('accounts, entries and transfers persist across reload and remain usable on
     .getByRole('dialog')
     .getByRole('combobox', { name: 'Account', exact: true })
     .selectOption({ label: 'Bank ' + stamp });
-  await page.getByRole('dialog').getByLabel('Amount (€)', { exact: true }).fill('12.50');
+  await page.getByRole('dialog').getByLabel('Amount (€)', { exact: true }).fill('12,50');
   const now = new Date();
   const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-15`;
   await page.getByRole('dialog').getByLabel('Date', { exact: true }).fill(date);

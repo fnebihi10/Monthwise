@@ -118,7 +118,7 @@ export function EntryDialog({
                 placeholder="0.00"
                 defaultValue={editing ? (editing.amountCents / 100).toFixed(2) : ''}
                 required
-                pattern="[0-9]+(\.[0-9]{1,2})?"
+                pattern="[0-9]+([.,][0-9]{1,2})?"
               />
             </label>
             <label>

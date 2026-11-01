@@ -39,8 +39,8 @@ export function summarize(entries: Entry[]) {
   return { income, spent, retained: income - spent };
 }
 export function parseCents(value: string): number | null {
-  if (!/^\d+(\.\d{1,2})?$/.test(value)) return null;
-  const [whole, fraction = ''] = value.split('.');
+  if (!/^\d+([.,]\d{1,2})?$/.test(value)) return null;
+  const [whole, fraction = ''] = value.replace(',', '.').split('.');
   const cents = Number(whole) * 100 + Number(fraction.padEnd(2, '0'));
   return Number.isSafeInteger(cents) && cents > 0 && cents <= 100000000 ? cents : null;
 }
