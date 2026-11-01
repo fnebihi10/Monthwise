@@ -1,5 +1,11 @@
 # Public deployment status
 
+## Independently checked November 1, 2026
+
+The live `/api/version` reports `66d52362-7b19-4b42-a8df-de23bf1a7298`. Cloudflare deployment history independently matches that version at 100% traffic, created November 1 at 07:15:28 UTC (08:15:28 Europe/Berlin). Health returned HTTP 200, anonymous ledger access HTTP 401 with no-store, and Google sign-in HTTP 303 to accounts.google.com. The version has no release tag; its exact source commit is unverified. No deployment or database changes were performed during this check.
+
+The version endpoint and health configuration are now observable remotely. Alert delivery, an independent encrypted production backup, two real Google accounts and the physical-iPhone offline flow remain unverified. Earlier deployment statements below are historical.
+
 ## Independently checked October 31, 2026
 
 Cloudflare deployment history reports 100% traffic on version `ff4c8c62-c65a-4be9-afe6-52e9d09e1f28`, created October 29 at 15:59:55 UTC. It has no release tag or source message; its exact Git commit is not established by that history. Main is at merge commit `1accfe8` before this maintenance work.

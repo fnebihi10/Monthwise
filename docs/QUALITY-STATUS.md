@@ -1,5 +1,15 @@
 # Quality evidence and remaining release work
 
+## Independent verification — November 1, 2026
+
+The local `npm run check` gate passed formatting, TypeScript, 58 unit/integration tests, the 25,000-record capacity test, synthetic SQL export/import recovery, production build, nine Edge UI tests, one Edge PWA test, twenty Chromium/iPhone-emulated WebKit UI tests and two cross-browser PWA tests. The cross-browser UI run included the newly added full-ledger browser benchmark. A separate Edge run passed that benchmark and the new successful identity-switching test; the latter also passed separately in Chromium and iPhone-emulated WebKit. These runs total 36 browser test executions. `npm audit --audit-level=moderate` reported zero known vulnerabilities.
+
+`e2e/capacity.spec.ts` serves 24,999 synthetic entries and one account through 50 mocked API pages at 390×844. It verifies all entries load, History initially renders only 30 rows, the final entry is searchable, and the page has no horizontal overflow. Chromium/Edge use 4× CPU slowdown; WebKit runs without CPU slowdown. Startup plus opening History stayed below 30 seconds and search below 5 seconds. This complements the real local D1 capacity test; mocked networking and host-relative CPU throttling do not reproduce older-phone hardware or production latency. Backend measurements for this run were 894 ms restore, 1,956 ms pagination, 73 ms reports/validation and 226 ms for twenty concurrent version reads.
+
+`e2e/identity.spec.ts` switches Alice → Bob → Alice in one browser with synthetic authenticated API responses. Each switch verifies that IndexedDB contains only the current owner's snapshot and that simulated API disconnection/reload displays only that owner's account. Existing tests separately exercise failed switching, backend ownership, backup rejection and exactly-once sync. These are automated isolation checks, not two real Google sign-ins.
+
+Hosted health, anonymous ledger denial and Google redirect passed. Live version metadata matches Cloudflare's deployment history; see PUBLIC-DEPLOYMENT.md. This supersedes earlier statements that the version endpoint still needs deployment. No code was deployed or production ledger data copied during this verification. The operator reports having no independent encrypted backup destination or alert destination, so storage provisioning and notification delivery remain open. No physical-device or first-time-user sessions were performed.
+
 ## Maintenance verification — October 31, 2026
 
 This working-tree maintenance pass passed 57 unit/integration tests, TypeScript and production build, the synthetic SQL export/import recovery drill, the 25,000-record capacity test, and a public Worker deployment dry run including the version metadata binding. Earlier in the same review, all nine Edge browser tests passed before the maintenance changes. Cross-browser and physical-device checks were not rerun for this pass.

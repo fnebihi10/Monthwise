@@ -4,6 +4,13 @@ Use fictional disposable records. Record date, Worker version, device/browser, o
 
 ## Two real Google accounts
 
+Operator report, November 1, 2026: the existing Google account retained its income
+and expense data; a second Google account started empty and prompted account
+creation. This supports basic hosted separation. Same-browser switch-back,
+interrupted/offline switching and cross-owner backup rejection were not described
+and remain open below. An iPhone is available; the complete offline test has not
+yet been reported.
+
 - [ ] Account A signs in and creates a uniquely named test account and entry.
 - [ ] Sign out, then sign in as B in the same browser. A's accounts, entries, planning and totals never appear, including during loading and after reload.
 - [ ] B creates its own disposable entry; sign back in as A and confirm B's data is absent.
@@ -12,6 +19,11 @@ Use fictional disposable records. Record date, Worker version, device/browser, o
 - [ ] Confirm Google's intended production audience in Google Auth Platform. A second successful sign-in alone does not establish publishing status.
 
 ## Physical iPhone
+
+Operator report, November 1, 2026: a EUR 1 expense entered offline saved successfully
+after Wi-Fi was restored. This supports offline entry/reconnection. The report did
+not explicitly confirm installed-app mode, two reloads, a second-browser check or
+exactly one balance effect; those acceptance details remain open.
 
 - [ ] In Safari sign in, install with Share → Add to Home Screen, open online and create a disposable account.
 - [ ] Enable airplane mode, disable Wi-Fi, reopen the installed app and confirm cached history is usable.
