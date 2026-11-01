@@ -1,5 +1,24 @@
 # Public deployment status
 
+## Tagged release — November 1, 2026
+
+Pushed and deployed source commit `c9d7acbbeb4567bb484cc79802b2abb4cf54494f`
+to the public Worker. Active version `6b5416f1-6da1-448d-933a-603988c40b46`
+has tag `c9d7acb` and receives 100% traffic. Cloudflare records deployment at
+07:33:53 UTC (08:33:53 Europe/Berlin). The release includes decimal-comma money
+inputs and clearer sign-in wording. The personal environment was not deployed.
+
+The complete local `npm run check` passed: formatting, TypeScript, 59 unit/integration
+tests, one capacity test, synthetic recovery, production build and 36 browser/PWA
+executions across Edge, Chromium and iPhone-emulated WebKit. Hosted GitHub Actions
+results were not independently inspected for this release. No public migrations
+were pending, and no schema changes or production-data exports were performed.
+
+After deployment, hosted health, anonymous ledger protection and Google redirect
+passed. `/api/version` matches the active version and source tag. Real-account and
+physical-device acceptance retain the partial operator evidence in ACCEPTANCE.md;
+backup storage and alert delivery remain open. The earlier sections are historical.
+
 ## Independently checked November 1, 2026
 
 The live `/api/version` reports `66d52362-7b19-4b42-a8df-de23bf1a7298`. Cloudflare deployment history independently matches that version at 100% traffic, created November 1 at 07:15:28 UTC (08:15:28 Europe/Berlin). Health returned HTTP 200, anonymous ledger access HTTP 401 with no-store, and Google sign-in HTTP 303 to accounts.google.com. The version has no release tag; its exact source commit is unverified. No deployment or database changes were performed during this check.
