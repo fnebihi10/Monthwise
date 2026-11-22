@@ -205,7 +205,6 @@ a {
   gap: 5px;
   justify-items: center;
   font-size: 12px;
-  transition: background 0.15s;
 }
 .month-strip button:last-child {
   border-right: 0;
