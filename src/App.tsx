@@ -1,7 +1,7 @@
 import { PlanningPanel, HistoryPanel, ToolsPanel } from './ReleasePanels';
 import { clearPrivateData, lockCache } from './offline';
 import { download } from './download';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLedger } from './useLedger';
 import { AccountsPanel, EntryDialog } from './LedgerForms';
 import type { LedgerEntry } from './models';
@@ -24,15 +24,10 @@ export default function App() {
   const [message, setMessage] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
   const monthStrip = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const strip = monthStrip.current;
-    const selected = strip?.querySelector<HTMLElement>('[aria-current="date"]');
-    if (strip && selected)
-      strip.scrollLeft +=
-        selected.getBoundingClientRect().left -
-        strip.getBoundingClientRect().left -
-        (strip.clientWidth - selected.clientWidth) / 2;
-  }, [ledger.state, month, year, view]);
+  const secondHalf = month >= 6;
+  useLayoutEffect(() => {
+    if (monthStrip.current) monthStrip.current.scrollLeft = 0;
+  }, [month, year, view]);
   const reports = useMemo(() => buildReports(entries), [entries]);
   const yearReport = useMemo(() => reportForYear(reports, year), [reports, year]);
   function navigate(delta: number) {
@@ -214,30 +209,39 @@ export default function App() {
           </div>
         </div>
         {['month', 'year', 'planning'].includes(view) && (
-          <nav ref={monthStrip} className="month-strip" aria-label="Choose a month">
-            {months.map((name, index) => (
-              <button
-                key={name}
-                className={
-                  month === index && (view === 'month' || view === 'planning') ? 'selected' : ''
-                }
-                aria-current={
-                  month === index && (view === 'month' || view === 'planning') ? 'date' : undefined
-                }
-                onClick={() => {
-                  setMonth(index);
-                  setView((current) => (current === 'planning' ? 'planning' : 'month'));
-                }}
-              >
-                <span className="month-number">{String(index + 1).padStart(2, '0')}</span>
-                <span>{name.slice(0, 3)}</span>
-                <span
+          <nav
+            ref={monthStrip}
+            className="month-strip"
+            data-second-half={secondHalf}
+            aria-label="Choose a month"
+          >
+            <div className="month-strip-grid">
+              {months.map((name, index) => (
+                <button
+                  key={name}
                   className={
-                    'month-dot ' + (yearReport.months[index].entries.length ? 'has-entries' : '')
+                    month === index && (view === 'month' || view === 'planning') ? 'selected' : ''
                   }
-                />
-              </button>
-            ))}
+                  aria-current={
+                    month === index && (view === 'month' || view === 'planning')
+                      ? 'date'
+                      : undefined
+                  }
+                  onClick={() => {
+                    setMonth(index);
+                    setView((current) => (current === 'planning' ? 'planning' : 'month'));
+                  }}
+                >
+                  <span className="month-number">{String(index + 1).padStart(2, '0')}</span>
+                  <span>{name.slice(0, 3)}</span>
+                  <span
+                    className={
+                      'month-dot ' + (yearReport.months[index].entries.length ? 'has-entries' : '')
+                    }
+                  />
+                </button>
+              ))}
+            </div>
           </nav>
         )}
         {(ledger.offline || ledger.pendingCount > 0 || ledger.syncMessage) && (

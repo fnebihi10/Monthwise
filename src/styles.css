@@ -190,9 +190,11 @@ a {
   display: flex;
 }
 .month-strip {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
   border: 1px solid var(--line);
+}
+.month-strip-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 .month-strip button {
   background: none;
@@ -832,12 +834,20 @@ aside {
   .month-strip {
     display: flex;
     overflow-x: auto;
+    scroll-snap-type: x mandatory;
     scrollbar-width: thin;
   }
+  .month-strip[data-second-half='true'] {
+    /* Start at July–December while keeping the tiles in chronological order. */
+    direction: rtl;
+  }
+  .month-strip-grid {
+    direction: ltr;
+    flex: 0 0 200%;
+  }
   .month-strip button {
-    min-width: 57px;
-    flex: 1;
     min-height: 70px;
+    scroll-snap-align: start;
   }
   .intro {
     margin: 30px 0 26px;

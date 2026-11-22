@@ -10,17 +10,41 @@ test.beforeEach(async ({ page }) => {
 test('the mobile dashboard shows the current month and all navigation options on first load', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.setFixedTime(new Date(2026, 10, 15, 12));
-  await page.goto('/');
-
   const monthPicker = page.getByRole('navigation', { name: 'Choose a month' });
   const currentMonth = monthPicker.locator('[aria-current="date"]');
-  await expect(currentMonth).toHaveText(/Nov/);
-  await expect(currentMonth).toBeInViewport({ ratio: 1 });
-  await expect(page.getByRole('button', { name: 'Backup & app', exact: true })).toBeInViewport({
-    ratio: 1,
-  });
+  const june = monthPicker.getByRole('button', { name: /06 Jun/ });
+  const july = monthPicker.getByRole('button', { name: /07 Jul/ });
+
+  for (const width of [320, 390, 393]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/');
+    await expect(currentMonth).toHaveText(/Nov/);
+    await expect(currentMonth).toBeInViewport({ ratio: 1 });
+    await expect(monthPicker).toHaveJSProperty('scrollLeft', 0);
+    await expect
+      .poll(() =>
+        monthPicker.evaluate((strip) => {
+          const left = strip.getBoundingClientRect().left + strip.clientLeft;
+          const july = strip.querySelectorAll('button')[6].getBoundingClientRect().left;
+          return Math.round(Math.abs(july - left) * window.devicePixelRatio);
+        }),
+      )
+      .toBe(0);
+    await expect(page.getByRole('button', { name: 'Backup & app', exact: true })).toBeInViewport({
+      ratio: 1,
+    });
+
+    await monthPicker.evaluate((strip) => {
+      strip.scrollLeft = -strip.scrollWidth;
+    });
+    await expect(june).toBeInViewport({ ratio: 0.99 });
+    await expect(july).not.toBeInViewport({ ratio: 0.01 });
+    await june.click();
+    await expect(currentMonth).toHaveText(/Jun/);
+    await expect(currentMonth).toBeInViewport({ ratio: 1 });
+    await expect(monthPicker).toHaveJSProperty('scrollLeft', 0);
+  }
 });
 test('accounts, entries and transfers persist across reload and remain usable on mobile', async ({
   page,
