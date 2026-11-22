@@ -35,7 +35,7 @@ exactly one balance effect; those acceptance details remain open.
 ## Recovery and operations
 
 - [ ] Keep a recent encrypted SQL backup outside this computer and the hosting account; record the storage location privately.
-- [ ] With explicit authorization to copy production data locally, run recovery:check on that backup. Record the private report location and date; do not attach the SQL or record counts to public issues.
+- [ ] Retrieve and decrypt the backup from its off-device destination. With explicit authorization to copy production data locally, run `npm run recovery:check` on the retrieved backup and record the date and report location privately.
 - [ ] Verify that a controlled failed health check reaches the operator. The workflow has successful scheduled runs on main, with observed gaps of several hours. Use a monitor with a suitable cadence if timely detection is required.
 - [ ] Configure Cloudflare Worker error and billing/usage notifications in the account with the desired recipient. The health workflow detects public endpoint failures, not every authenticated API error.
 

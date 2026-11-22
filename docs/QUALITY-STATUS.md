@@ -2,6 +2,19 @@
 
 For current hosted evidence, see [Deployment status](PUBLIC-DEPLOYMENT.md). For open verification work, see [Public readiness](PUBLIC-READINESS.md) and [Acceptance](ACCEPTANCE.md). The dated results below document earlier checks.
 
+## Review pass — November 22, 2026
+
+`e2e/capacity.spec.ts` compares 100 and 24,999 fictional entries at 390 × 844 in Edge, with 4× CPU slowdown and a 25 ms delay per mocked API response. Startup runs from navigation to the entry action becoming visible. Save confirmation and refreshed data are timed independently from HTTP 201 to their first visible result. These are single-run local development timings against the same fixture on `a2a88bb` and the review changes.
+
+| Entries before save | Snapshot pages, startup / refresh | Startup before → after | Save confirmation before → after | New entry visible before → after |
+| ------------------- | --------------------------------- | ---------------------- | -------------------------------- | -------------------------------- |
+| 100                 | 1 / 1                             | 802 → 1,090 ms         | 213 → 90 ms                      | 214 → 220 ms                     |
+| 24,999              | 50 / 50                           | 2,462 → 2,517 ms       | 2,355 → 100 ms                   | 2,356 → 2,604 ms                 |
+
+The 100-entry fixture refreshed in about 0.22 s. Near capacity, the ledger still spends about 2.6 s reloading after a save. The single-run startup times include local Vite and host variation. For a focused follow-up on large ledgers, return the saved entry or deletion, updated account balances and ledger revision from entry mutations. Apply that response when its revision directly follows the cached revision for the same owner, and otherwise load a consistent snapshot. Re-run both fixture sizes and compare request count and time to the visible entry. The target for a consecutive-revision save is zero snapshot pages instead of 50.
+
+The sample month verifies the accounting labels with €2,000 income minus €800 expenses, so €1,200 stayed. The €400 opening balance brings the account total to €1,600. Subtracting a €125 unpaid bill and €300 earmarked for savings leaves €1,175 unassigned.
+
 ## Independent verification — November 1, 2026
 
 The local `npm run check` gate passed formatting, TypeScript, 58 unit/integration tests, the 25,000-record capacity test, synthetic SQL export/import recovery, production build, nine Edge UI tests, one Edge PWA test, twenty Chromium/iPhone-emulated WebKit UI tests and two cross-browser PWA tests. The cross-browser UI run included the newly added full-ledger browser benchmark. A separate Edge run passed that benchmark and the new successful identity-switching test; the latter also passed separately in Chromium and iPhone-emulated WebKit. These runs total 36 browser test executions. `npm audit --audit-level=moderate` reported zero known vulnerabilities.

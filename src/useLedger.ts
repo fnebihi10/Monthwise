@@ -22,11 +22,31 @@ export function useLedger() {
     [busy, setBusy] = useState(false),
     [offline, setOffline] = useState(!navigator.onLine),
     [pending, setPending] = useState<PendingEntry[]>([]),
-    [syncMessage, setSyncMessage] = useState('');
+    [syncMessage, setSyncMessage] = useState(''),
+    [refreshWarning, setRefreshWarning] = useState(false),
+    [refreshing, setRefreshing] = useState(false);
   const base = useRef<Snapshot>(emptySnapshot),
+    session = useRef(0),
     mutating = useRef(false),
     syncing = useRef<Promise<void> | null>(null),
     version = useRef<number | null>(null);
+  const clearView = useCallback(() => {
+    base.current = emptySnapshot;
+    version.current = null;
+    setSnapshot(emptySnapshot);
+    setPending([]);
+    setRefreshWarning(false);
+    setSyncMessage('');
+  }, []);
+  const signedOut = useCallback(
+    (message: string) => {
+      session.current++;
+      clearView();
+      setState('signed-out');
+      setError(message);
+    },
+    [clearView],
+  );
   const show = useCallback((value: Snapshot, queue: PendingEntry[]) => {
     base.current = value;
     setPending(queue);
@@ -35,29 +55,39 @@ export function useLedger() {
     setError('');
   }, []);
   const refresh = useCallback(
-    async (force = false): Promise<void> => {
+    async (mode: 'sync' | 'read' = 'sync'): Promise<void> => {
       if (syncing.current) return syncing.current;
-      if (mutating.current && !force) return;
+      if (mutating.current && mode === 'sync') return;
+      const activeSession = session.current;
+      const checkSession = () => {
+        if (activeSession !== session.current) throw Error('The ledger session ended.');
+      };
+      setRefreshing(true);
       const task = (async () => {
         let authenticatedOwner: string | null = null;
+        let previousOwner = base.current.user.id;
+        const observeOwner = async (ownerId: string) => {
+          checkSession();
+          authenticatedOwner = ownerId;
+          if (previousOwner && previousOwner !== ownerId) {
+            clearView();
+            setState('loading');
+            await lockCache().catch(() => {});
+            checkSession();
+          }
+          previousOwner = ownerId;
+        };
         try {
           const latest = await request<{ version: number; ownerId: string }>('/api/ledger/version');
-          authenticatedOwner = latest.ownerId;
-          const previousOwner = base.current.user.id || (await cacheOwner().catch(() => null));
-          if (previousOwner && previousOwner !== latest.ownerId) {
-            await lockCache().catch(() => {});
-            base.current = emptySnapshot;
-            setSnapshot(emptySnapshot);
-            setPending([]);
-            version.current = null;
-          }
+          previousOwner ||= (await cacheOwner().catch(() => null)) || '';
+          await observeOwner(latest.ownerId);
           let value = base.current;
-          let changed =
-            force || latest.ownerId !== value.user.id || latest.version !== version.current;
+          let loadedVersion = version.current;
+          let changed = latest.ownerId !== value.user.id || latest.version !== loadedVersion;
           if (changed) {
-            const loaded = await loadSnapshot();
+            const loaded = await loadSnapshot(observeOwner);
             value = loaded.snapshot;
-            version.current = loaded.version;
+            loadedVersion = loaded.version;
           }
           let queue: PendingEntry[] = [];
           try {
@@ -68,42 +98,56 @@ export function useLedger() {
               'Offline storage is unavailable in this browser. Keep a connection while entering records.',
             );
           }
-          if (queue.length) {
+          checkSession();
+          if (queue.length && mode === 'sync') {
             await syncPending(queue);
             const synced = await request<{ version: number; ownerId: string }>(
               '/api/ledger/version',
             );
-            if (synced.version !== version.current || synced.ownerId !== value.user.id) {
-              const loaded = await loadSnapshot();
+            await observeOwner(synced.ownerId);
+            if (synced.version !== loadedVersion || synced.ownerId !== value.user.id) {
+              const loaded = await loadSnapshot(observeOwner);
               value = loaded.snapshot;
-              version.current = loaded.version;
+              loadedVersion = loaded.version;
               changed = true;
             }
+            queue = await pendingFor(value.user.id).catch(() => []);
           }
-          try {
-            queue = await pendingFor(value.user.id);
-            if (changed) await saveSnapshot(value);
-          } catch {}
+          checkSession();
+          if (changed) {
+            await saveSnapshot(value).catch(() => {});
+            if (activeSession !== session.current) await lockCache().catch(() => {});
+          }
+          checkSession();
+          version.current = loadedVersion;
           show(value, queue);
           setOffline(false);
+          setRefreshWarning(false);
         } catch (e) {
-          if (e instanceof RequestError && e.status === 401) {
+          if (activeSession !== session.current) throw e;
+          if (e instanceof RequestError && (e.status === 401 || e.status === 403)) {
+            signedOut('Sign in to open your ledger.');
             await lockCache().catch(() => {});
-            setSnapshot(emptySnapshot);
-            setState('signed-out');
-            setError('Sign in to open your ledger.');
+            throw e;
+          }
+          if (base.current.user.id) {
+            setRefreshWarning(true);
+            setOffline(!navigator.onLine || !(e instanceof RequestError));
             throw e;
           }
           if (!(e instanceof RequestError)) {
             try {
               const cached = await readCached();
               if (cached && (!authenticatedOwner || cached.user.id === authenticatedOwner)) {
-                show(cached, await pendingFor(cached.user.id));
+                const queue = await pendingFor(cached.user.id);
+                checkSession();
+                show(cached, queue);
                 setOffline(true);
                 return;
               }
             } catch {}
           }
+          checkSession();
           setSnapshot(emptySnapshot);
           setState('error');
           setError(e instanceof Error ? e.message : 'Unable to load your ledger.');
@@ -115,9 +159,10 @@ export function useLedger() {
         await task;
       } finally {
         syncing.current = null;
+        setRefreshing(false);
       }
     },
-    [show],
+    [clearView, show, signedOut],
   );
   useEffect(() => {
     void refresh().catch(() => {});
@@ -134,14 +179,7 @@ export function useLedger() {
       if (navigator.onLine && document.visibilityState === 'visible' && !mutating.current) online();
     }, 60000);
     const channel = 'BroadcastChannel' in window ? new BroadcastChannel('monthwise') : null;
-    if (channel)
-      channel.onmessage = () => {
-        base.current = emptySnapshot;
-        setSnapshot(emptySnapshot);
-        setPending([]);
-        setState('signed-out');
-        setError('You signed out.');
-      };
+    if (channel) channel.onmessage = () => signedOut('You signed out.');
     return () => {
       window.removeEventListener('online', online);
       window.removeEventListener('offline', off);
@@ -150,26 +188,35 @@ export function useLedger() {
       clearInterval(timer);
       channel?.close();
     };
-  }, [refresh]);
+  }, [refresh, signedOut]);
   async function queueEntry(data: unknown) {
     const entry = data as LedgerEntry;
-    if (!base.current.user.id || !base.current.accounts.some((a) => a.id === entry.accountId))
+    const current = base.current;
+    if (!current.user.id || !current.accounts.some((a) => a.id === entry.accountId))
       throw Error('Open your ledger online first.');
     const queued = { ...entry, revision: 1 };
-    await savePending({ id: entry.id, ownerId: base.current.user.id, entry: queued });
-    show(base.current, await pendingFor(base.current.user.id));
+    await savePending({ id: entry.id, ownerId: current.user.id, entry: queued });
+    const queue = await pendingFor(current.user.id);
+    if (base.current !== current) throw Error('The ledger session ended.');
+    show(current, queue);
     setOffline(true);
   }
-  const mutate = async (path: string, method: string, data: unknown) => {
+  const mutate = async (
+    path: string,
+    method: string,
+    data: unknown,
+  ): Promise<'saved' | 'queued'> => {
     if (mutating.current) throw Error('A change is already being saved.');
     mutating.current = true;
     setBusy(true);
     try {
-      if (syncing.current) await syncing.current;
+      const owner = base.current.user.id;
+      if (syncing.current) await syncing.current.catch(() => {});
+      if (!owner || owner !== base.current.user.id) throw Error('Open your ledger again to save.');
       if (!navigator.onLine) {
         if (path === '/api/entries' && method === 'POST') {
           await queueEntry(data);
-          return;
+          return 'queued';
         }
         throw Error(
           'Connect to the internet for this change. You can add income and expenses offline.',
@@ -180,17 +227,17 @@ export function useLedger() {
       } catch (e) {
         if (!(e instanceof RequestError) && path === '/api/entries' && method === 'POST') {
           await queueEntry(data);
-          return;
+          return 'queued';
         }
         if (e instanceof RequestError && e.status === 401) {
+          signedOut('Sign in to open your ledger.');
           await lockCache().catch(() => {});
-          setSnapshot(emptySnapshot);
-          setState('signed-out');
         }
-        if (e instanceof RequestError && e.status === 409) await refresh(true).catch(() => {});
+        if (e instanceof RequestError && e.status === 409) await refresh('read').catch(() => {});
         throw e;
       }
-      await refresh(true);
+      void refresh('read').catch(() => {});
+      return 'saved';
     } finally {
       mutating.current = false;
       setBusy(false);
@@ -206,6 +253,8 @@ export function useLedger() {
     error,
     busy,
     refresh,
+    refreshing,
+    refreshWarning,
     mutate,
     offline,
     pending,

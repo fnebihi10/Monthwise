@@ -1,6 +1,6 @@
 import type { Snapshot } from './models';
 import { monthKey } from './planning';
-export type Mutate = (path: string, method: string, data: unknown) => Promise<void>;
+export type Mutate = (path: string, method: string, data: unknown) => Promise<'saved' | 'queued'>;
 export type Shared = {
   data: Snapshot;
   busy: boolean;

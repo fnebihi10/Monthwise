@@ -4,9 +4,11 @@
 
 ## Rechecked November 22, 2026
 
-The public version endpoint still reports Worker version `6b5416f1-6da1-448d-933a-603988c40b46` with release tag `c9d7acb`. Public health, anonymous ledger denial and the Google redirect passed. The signed-out page also loaded in fresh Edge sessions at desktop and mobile widths without layout overflow or uncaught page errors. Authenticated behavior is tracked in [Acceptance](ACCEPTANCE.md).
+The [public version endpoint](https://monthwise.online/api/version) reports Worker version `4c3ebe72-3143-4654-a2f6-096820658058` with release tag `a2a88bb`. The homepage, public health, anonymous ledger denial with `no-store`, and Google redirect passed.
 
-GitHub's [project checks for main](https://github.com/fnebihi10/Monthwise/actions/runs/41285330231) passed on `3b12ed0`. The only tracked change from the deployed commit to that commit is this deployment log. The [exact deployed commit's workflow](https://github.com/fnebihi10/Monthwise/actions/runs/41285115877) was cancelled. The [public health workflow](https://github.com/fnebihi10/Monthwise/actions/runs/44971259147) has successful scheduled runs. Recent runs were several hours apart despite the half-hour schedule, so alert timing and delivery still need verification.
+GitHub reports `a2a88bb9e83ab92bfc6829f621bbf88aee323228` as the head of main, and the [Project checks run for that exact commit](https://github.com/fnebihi10/Monthwise/actions/runs/45005187538) completed successfully. The [public health workflow](https://github.com/fnebihi10/Monthwise/actions/runs/44971259147) has successful scheduled runs. Earlier observations found runs several hours apart despite the half-hour schedule.
+
+The review fixes were exercised locally with fictional records. The owner still needs to verify interrupted switching between two real Google accounts, exactly-once sync in the installed app on a physical iPhone, retrieval and recovery from an encrypted off-device backup, and receipt of a controlled failed-health alert. See [Acceptance](ACCEPTANCE.md).
 
 ## Tagged release — November 1, 2026
 

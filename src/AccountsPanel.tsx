@@ -10,12 +10,14 @@ export function AccountsPanel({
   busy,
   mutate,
   onMessage,
+  onFirstEntry,
 }: {
   accounts: Account[];
   transfers: Transfer[];
   busy: boolean;
   mutate: Mutate;
   onMessage: (message: string) => void;
+  onFirstEntry?: () => void;
 }) {
   const [error, setError] = useState('');
   const [adding, setAdding] = useState(accounts.length === 0);
@@ -123,9 +125,9 @@ export function AccountsPanel({
     <section className="accounts-panel" aria-label="Accounts and transfers">
       <div className="accounts-intro">
         <p>
-          Cash in your pocket. Money in the bank. A little set aside.
-          <br />
-          Give each one a home, and see the whole picture.
+          {accounts.length
+            ? 'Track cash, bank and savings balances here.'
+            : 'Start with a bank or cash account and enter its current balance.'}
         </p>
         <div>
           <button
@@ -154,6 +156,11 @@ export function AccountsPanel({
           )}
         </div>
       </div>
+      {accounts.length > 0 && onFirstEntry && (
+        <button className="secondary-button" disabled={busy} onClick={onFirstEntry}>
+          Add your first entry
+        </button>
+      )}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -172,7 +179,13 @@ export function AccountsPanel({
             <div className="account-form-grid">
               <label>
                 Account name
-                <input name="name" required maxLength={60} placeholder="e.g. My bank account" />
+                <input
+                  name="name"
+                  required
+                  maxLength={60}
+                  placeholder="e.g. My bank account"
+                  autoFocus={accounts.length === 0}
+                />
               </label>
               <label>
                 Type

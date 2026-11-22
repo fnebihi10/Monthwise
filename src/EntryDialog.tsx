@@ -36,7 +36,7 @@ export function EntryDialog({
     }
     const date = String(data.get('date'));
     try {
-      await mutate(
+      const result = await mutate(
         editing ? '/api/entries/' + editing.id : '/api/entries',
         editing ? 'PUT' : 'POST',
         {
@@ -52,7 +52,14 @@ export function EntryDialog({
         },
       );
       dialog.current?.close();
-      onSaved(date, editing ? 'Entry updated.' : 'Entry saved.');
+      onSaved(
+        date,
+        result === 'queued'
+          ? 'Entry saved on this device. Waiting to sync.'
+          : editing
+            ? 'Entry updated.'
+            : 'Entry saved.',
+      );
     } catch (error) {
       setError(failure(error));
     }
