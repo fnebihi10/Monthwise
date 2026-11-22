@@ -9,11 +9,15 @@ async function check(path, expected, verify = () => true) {
     throw Error(`${path}: unexpected response (HTTP ${response.status})`);
   console.log(`${path}: passed`);
 }
+await check('/', 200, (r) => r.headers.get('content-type')?.startsWith('text/html'));
 await check('/api/health', 200, async (r) => (await r.json()).status === 'ok');
 await check('/api/ledger', 401, (r) => r.headers.get('cache-control') === 'no-store');
 await check('/auth/google', 303, (r) => {
   const url = new URL(r.headers.get('location'));
-  return url.origin === 'https://accounts.google.com';
+  return (
+    url.origin === 'https://accounts.google.com' &&
+    url.searchParams.get('redirect_uri') === origin + '/auth/google/callback'
+  );
 });
 const response = await fetch(origin + '/api/version', { signal: AbortSignal.timeout(15000) });
 if (response.status === 401) {

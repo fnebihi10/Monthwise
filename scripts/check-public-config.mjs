@@ -28,5 +28,5 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  'Local public configuration passed. Before deploying, complete docs/PUBLIC-LAUNCH.md: review the Google audience/callback, add GOOGLE_CLIENT_SECRET securely, and back up/apply database migrations.',
+  'Local public configuration passed. See docs/RELEASE-CHECKLIST.md for deployment steps and docs/GOOGLE-SIGN-IN.md for the public OAuth settings.',
 );
