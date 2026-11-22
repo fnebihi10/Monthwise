@@ -1,5 +1,7 @@
 # Browser review — November 1, 2026
 
+This records the earlier browser pass. The tagged release corrected the signed-out copy described below. See [Deployment status](PUBLIC-DEPLOYMENT.md) for the later hosted check.
+
 ## Live site
 
 Opened https://monthwise.online in clean Microsoft Edge browser contexts at 1440×1000 and 390×844. Both returned HTTP 200, displayed the sign-in heading and Google link, had no horizontal page overflow, and emitted no uncaught page JavaScript errors during initial loading. Clicking the Google link reached accounts.google.com on both sizes. Anonymous ledger requests returned HTTP 401.

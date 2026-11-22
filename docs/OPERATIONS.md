@@ -1,10 +1,10 @@
 # Operating Monthwise
 
-## Diagnostics after deploying this branch
+## Public diagnostics and monitoring
 
-Run `npm run deployment:status` to inspect active Cloudflare versions. After deploying this maintenance change, `https://monthwise.online/api/version` returns the actual Worker version ID, optional tag and timestamp without accessing the database. It exposes no user records. Match that ID against Cloudflare Deployments; an untagged version cannot establish its source commit. Record the source commit alongside the Worker version whenever releasing.
+Run `npm run deployment:status` to inspect active Cloudflare versions. The public [version endpoint](https://monthwise.online/api/version) returns the Worker version ID, optional tag and timestamp without accessing the database. Match that ID against Cloudflare Deployments and record the source commit with each release.
 
-Run `npm run check:hosted` for public health, anonymous ledger denial and the Google redirect. `.github/workflows/uptime.yml` runs the same checks twice an hour after it reaches main, or manually through Actions. Enable failed-workflow notifications in GitHub; no notification recipient is automatically configured. The workflow requires no cloud credentials and never signs in. It is a basic availability check, not continuous coverage of authenticated errors.
+Run `npm run check:hosted` for the homepage, public health, anonymous ledger denial, the Google redirect and running version. The GitHub workflow requests runs twice an hour and also supports manual dispatch. Observed runs can be several hours apart. Enable failed-workflow notifications and verify delivery. Use an independent monitor if you need a predictable detection interval. The checks require no cloud credentials or authenticated session.
 
 Unexpected API failures return a generic message and an internally generated `X-Request-ID`; the interface shows that reference for support. Search for the reference under the public Worker's Observability logs.
 

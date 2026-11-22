@@ -1,5 +1,7 @@
 # Quality evidence and remaining release work
 
+For current hosted evidence, see [Deployment status](PUBLIC-DEPLOYMENT.md). For open verification work, see [Public readiness](PUBLIC-READINESS.md) and [Acceptance](ACCEPTANCE.md). The dated results below document earlier checks.
+
 ## Independent verification — November 1, 2026
 
 The local `npm run check` gate passed formatting, TypeScript, 58 unit/integration tests, the 25,000-record capacity test, synthetic SQL export/import recovery, production build, nine Edge UI tests, one Edge PWA test, twenty Chromium/iPhone-emulated WebKit UI tests and two cross-browser PWA tests. The cross-browser UI run included the newly added full-ledger browser benchmark. A separate Edge run passed that benchmark and the new successful identity-switching test; the latter also passed separately in Chromium and iPhone-emulated WebKit. These runs total 36 browser test executions. `npm audit --audit-level=moderate` reported zero known vulnerabilities.
@@ -33,21 +35,3 @@ The first expanded hosted CI run also caught a missing chart role on an empty le
 The frontend separates monthly/yearly views, entry forms and account management. A memoized one-pass index replaces repeated full-ledger scans for reports and Excel summaries. Unchanged snapshots preserve entry-array identity. Full history still resides in browser memory within the 25,000-record cap.
 
 The dependency audit reports zero known advisories after updating Wrangler and patching transitive HTTP/UUID dependencies. Audit results are time-specific and checked again in CI.
-
-## Hosted and operator evidence
-
-The operator confirmed Google sign-in on monthwise.online, JSON migration with matching records/totals, and installation/use of the new domain on physical iPhone. These are operator reports, not independent reproduction by the coding agent.
-
-The last observed Google publishing status was Testing. Production publishing, a second real account's independent hosted ledger, and the complete physical-iPhone offline-create/reconnect-exactly-once flow have not been confirmed. Automated browsers test the offline flow locally.
-
-The quality-pass changes require a separate public deployment. The prior public deployment remains usable. No live records or production schema were modified by this pass.
-
-## Remaining public-readiness work
-
-- Confirm Google's production audience/publishing and any remaining brand/domain requirements.
-- Complete two-real-account and physical-iPhone offline/reconnection acceptance checks.
-- Deploy and verify diagnostics/health, then configure alerts and independent encrypted backups.
-- Public pull request #1 is merged into main (`1accfe8`). Deployment is separate from merging.
-- Collect real usage/performance evidence and conduct broader security/accessibility review before stronger claims.
-
-A score is subjective. The evidence supports a stronger tested beta, not a promise of perfection or a 9.5–10 rating.

@@ -1,5 +1,13 @@
 # Public deployment status
 
+**Live app:** [https://monthwise.online/](https://monthwise.online/). The custom domain serves Worker `monthwise-public`. The public Google OAuth callback is `https://monthwise.online/auth/google/callback`.
+
+## Rechecked November 22, 2026
+
+The public version endpoint still reports Worker version `6b5416f1-6da1-448d-933a-603988c40b46` with release tag `c9d7acb`. Public health, anonymous ledger denial and the Google redirect passed. The signed-out page also loaded in fresh Edge sessions at desktop and mobile widths without layout overflow or uncaught page errors. Authenticated behavior is tracked in [Acceptance](ACCEPTANCE.md).
+
+GitHub's [project checks for main](https://github.com/fnebihi10/Monthwise/actions/runs/41285330231) passed on `3b12ed0`. The only tracked change from the deployed commit to that commit is this deployment log. The [exact deployed commit's workflow](https://github.com/fnebihi10/Monthwise/actions/runs/41285115877) was cancelled. The [public health workflow](https://github.com/fnebihi10/Monthwise/actions/runs/44971259147) has successful scheduled runs. Recent runs were several hours apart despite the half-hour schedule, so alert timing and delivery still need verification.
+
 ## Tagged release — November 1, 2026
 
 Pushed and deployed source commit `c9d7acbbeb4567bb484cc79802b2abb4cf54494f`
@@ -37,7 +45,7 @@ Run `npm run deployment:status` to repeat the Cloudflare history check. In Cloud
 
 Remaining acceptance work is tracked in [ACCEPTANCE.md](ACCEPTANCE.md). The sections below preserve historical events only and must not be treated as current setup instructions.
 
-## Latest status
+## Earlier Google sign-in setup
 
 The operator subsequently added the Google secret securely in Cloudflare. Active version after that change was `996cfbe5-654a-4004-94f7-f2407b3d6622`. A hosted check confirmed the correct Google redirect and protected login cookie. The operator confirmed real sign-in, successful JSON restoration, and installation/use of the new domain on iPhone. Two-account hosted isolation and the full physical-device offline flow remain unconfirmed.
 

@@ -36,7 +36,7 @@ exactly one balance effect; those acceptance details remain open.
 
 - [ ] Keep a recent encrypted SQL backup outside this computer and the hosting account; record the storage location privately.
 - [ ] With explicit authorization to copy production data locally, run recovery:check on that backup. Record the private report location and date; do not attach the SQL or record counts to public issues.
-- [ ] Enable GitHub Actions notifications for failed Public site health runs and manually run the workflow after pushing it to main. Scheduled runs can be delayed and are not an uptime SLA.
+- [ ] Verify that a controlled failed health check reaches the operator. The workflow has successful scheduled runs on main, with observed gaps of several hours. Use a monitor with a suitable cadence if timely detection is required.
 - [ ] Configure Cloudflare Worker error and billing/usage notifications in the account with the desired recipient. The health workflow detects public endpoint failures, not every authenticated API error.
 
 Synthetic recovery validates the procedure only. It does not establish that an independent production backup exists or is restorable.

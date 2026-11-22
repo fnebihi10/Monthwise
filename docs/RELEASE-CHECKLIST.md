@@ -2,7 +2,7 @@
 
 ## Local verification
 
-Use Node 22.21 or newer and install the locked dependencies with npm ci. Run npm run check. Microsoft Edge must be installed for browser tests. Both browser suites apply all migrations to isolated local databases; they do not access the hosted ledger.
+Use Node 22.21 or newer and install the locked dependencies with `npm ci`. Install Edge and Playwright Chromium and WebKit, then run `npm run check`. The browser suites use isolated local databases.
 
 The GitHub Actions workflow runs checks on Windows and cross-browser checks on Linux, uploading browser traces on failure. Inspect the current commit's Actions results separately from local results.
 
@@ -16,12 +16,12 @@ Do not publish ledger data or cloud secrets. Google client IDs and D1 binding ID
 
 ## Deployment handoff
 
-No deployment is part of these local fixes. Before a later deployment:
+For a public deployment:
 
 1. Record the source commit, local checks and hosted CI result.
 2. With authorization to copy private data, back up the public database and verify local recovery. Keep an encrypted independent copy. Never substitute the personal database binding.
-3. Inspect pending public migrations before applying any. This maintenance change adds no migration.
-4. Build and deploy using `npm run deploy:public`. Record the active Worker version with `npm run deployment:status` and `/api/version`.
+3. Inspect pending public migrations before applying any.
+4. Build and deploy using `npm run deploy:public -- --tag <short-source-commit>`. Record the active Worker version with `npm run deployment:status` and `/api/version`.
 5. Run `npm run check:hosted` and complete [ACCEPTANCE.md](ACCEPTANCE.md) with real accounts and a physical iPhone.
 
 The JSON recovery contract is 8 MB and 25,000 total records. Both exporting and importing enforce it. Use D1 database exports for ledgers exceeding that contract. Keep regular independent backups even while using provider recovery.
