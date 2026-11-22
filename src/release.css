@@ -293,6 +293,12 @@
   }
 }
 @media (max-width: 550px) {
+  .page-top .view-switch {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 0 14px;
+    overflow-x: visible;
+  }
   .planning-summary {
     grid-template-columns: 1fr;
   }

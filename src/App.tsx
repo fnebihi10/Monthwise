@@ -32,7 +32,7 @@ export default function App() {
         selected.getBoundingClientRect().left -
         strip.getBoundingClientRect().left -
         (strip.clientWidth - selected.clientWidth) / 2;
-  }, [month, year, view]);
+  }, [ledger.state, month, year, view]);
   const reports = useMemo(() => buildReports(entries), [entries]);
   const yearReport = useMemo(() => reportForYear(reports, year), [reports, year]);
   function navigate(delta: number) {

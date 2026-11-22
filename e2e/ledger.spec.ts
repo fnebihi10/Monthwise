@@ -6,6 +6,22 @@ test.beforeEach(async ({ page }) => {
     Object.defineProperty(globalThis.crypto, 'randomUUID', { value: undefined }),
   );
 });
+
+test('the mobile dashboard shows the current month and all navigation options on first load', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.setFixedTime(new Date(2026, 10, 15, 12));
+  await page.goto('/');
+
+  const monthPicker = page.getByRole('navigation', { name: 'Choose a month' });
+  const currentMonth = monthPicker.locator('[aria-current="date"]');
+  await expect(currentMonth).toHaveText(/Nov/);
+  await expect(currentMonth).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole('button', { name: 'Backup & app', exact: true })).toBeInViewport({
+    ratio: 1,
+  });
+});
 test('accounts, entries and transfers persist across reload and remain usable on mobile', async ({
   page,
 }) => {
