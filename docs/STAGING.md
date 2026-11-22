@@ -1,6 +1,6 @@
 # Staging deployment
 
-Updated 2026-10-23.
+Historical snapshot from October 23, 2026. See [Deployment status](PUBLIC-DEPLOYMENT.md) for the current public environment.
 
 ## Provisioned and configured
 

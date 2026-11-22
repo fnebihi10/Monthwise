@@ -46,9 +46,9 @@ Restore validates ownership, IDs, amounts, dates, links, duplicate monthly keys 
 
 ## Environments and release checks
 
-Local development uses .wrangler/state; browser tests use separate .wrangler/e2e and .wrangler/pwa-e2e databases. The personal environment intentionally retains the original database named monthwise-staging. The unused production database is not the personal ledger. See PERSONAL-DEPLOYMENT.md before any cloud change.
+Local development uses `.wrangler/state`. The browser suites use separate `.wrangler/e2e` and `.wrangler/pwa-e2e` databases. The personal Worker uses `monthwise-staging`; the public Worker uses `monthwise-production`. See [deployment status](PUBLIC-DEPLOYMENT.md) for hosted evidence.
 
-GitHub Actions runs formatting, type checking, unit/integration tests, the production build, Edge browser tests and the offline PWA test using Node 22.21.0. It does not deploy or use cloud secrets. Run npm run check locally for the same checks.
+GitHub Actions checks formatting, types, unit and integration tests, synthetic capacity and recovery, the production build, and browser and offline PWA tests across Edge, Chromium and WebKit. Run `npm run check` locally for the same suites. CI also runs a dependency audit. Deployment is separate.
 
 Physical iPhone installation, standalone cookie behavior and real owner sign-in still require device/release verification. These checks are separate from the automated local tests.
 

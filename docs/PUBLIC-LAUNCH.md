@@ -1,12 +1,12 @@
 # Public Monthwise launch
 
-> Historical preparation notes below, not current status. The public app is deployed and the public branch was merged. Use [Deployment status](PUBLIC-DEPLOYMENT.md) and [Acceptance checks](ACCEPTANCE.md) for current evidence and remaining work. Do not repeat initialization steps based on this historical checklist.
+> Historical preparation notes. The public app is live at [monthwise.online](https://monthwise.online/). Use [Deployment status](PUBLIC-DEPLOYMENT.md) and [Acceptance checks](ACCEPTANCE.md) for current evidence and remaining work. Do not repeat initialization steps based on this historical checklist.
 
 For the latest deployment progress and remaining blockers, see [Public deployment handoff](PUBLIC-DEPLOYMENT.md). The preparation notes below describe the state before the first upload.
 
 ## Status on October 28, 2026
 
-The existing personal Worker is `monthwise`, at https://monthwise.fnebihi10.workers.dev. Its most recent deployment inspected during this work was October 24. Pushing to GitHub did not update it.
+The separate owner-only Worker was `monthwise`. Its most recent deployment inspected during this work was October 24. Pushing to GitHub did not update it.
 
 The public version is prepared on `feat/public-multiuser`. It has not been deployed. The original GitHub `main` checks passed. The operator created the Monthwise Online Google project and supplied its public client ID. The client secret, domain connection and Google audience still require configuration before release.
 
