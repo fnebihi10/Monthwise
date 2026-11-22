@@ -258,7 +258,6 @@ h1 {
   color: var(--accent);
 }
 .title-year {
-  display: inline-block;
   font-size: 20px;
   letter-spacing: -0.5px;
   color: var(--muted);
@@ -511,6 +510,35 @@ aside {
   width: 7px;
   height: 7px;
   display: block;
+}
+.note-card {
+  margin-top: 28px;
+  padding: 23px 21px 19px;
+  background: #eae2d3;
+  position: relative;
+}
+.note-star {
+  display: block;
+  font-size: 30px;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+.note-card .eyebrow {
+  font-size: 8px;
+  letter-spacing: 1.1px;
+}
+.note-card h3 {
+  font-family: Georgia, serif;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.15;
+  margin: 12px 0;
+}
+.note-card > p:last-child {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #686151;
+  margin-bottom: 0;
 }
 .month-footer {
   display: flex;
@@ -827,7 +855,7 @@ aside {
     gap: 21px;
   }
   h1 {
-    font-size: clamp(44px, 14vw, 61px);
+    font-size: 61px;
   }
   .title-year {
     font-size: 16px;
@@ -840,6 +868,12 @@ aside {
     font-size: 12px;
     max-width: 250px;
     line-height: 1.7;
+  }
+  .intro .primary-button {
+    margin-top: 3px;
+    padding: 11px 14px;
+    min-height: 43px;
+    font-size: 11px;
   }
   .summary {
     grid-template-columns: 1fr 1fr;
@@ -931,6 +965,22 @@ aside {
     display: grid;
     grid-template-columns: 1fr;
     gap: 15px;
+  }
+  .note-card {
+    margin-top: 10px;
+  }
+  .note-card h3 br {
+    display: none;
+  }
+  .note-card .note-star {
+    float: right;
+    margin: 0;
+  }
+  .note-card {
+    padding: 23px;
+  }
+  .note-card > p:last-child {
+    max-width: 90%;
   }
   .month-footer {
     margin-top: 28px;

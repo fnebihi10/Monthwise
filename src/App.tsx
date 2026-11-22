@@ -10,24 +10,9 @@ import { buildReports, reportForYear } from './reports';
 import { MonthView } from './MonthView';
 import { YearView } from './YearView';
 import { Arrow } from './Arrow';
-import { SampleMonth } from './SampleMonth';
-import { monthKey, reservationTotals } from './planning';
-import { ReservationSummary } from './ReservationSummary';
 
 export default function App() {
-  return new URLSearchParams(window.location.search).get('sample') === '1' ? (
-    <SampleMonth />
-  ) : (
-    <LedgerApp />
-  );
-}
-
-function LedgerApp() {
   const ledger = useLedger();
-  return <LedgerWorkspace key={ledger.user.id} ledger={ledger} />;
-}
-
-function LedgerWorkspace({ ledger }: { ledger: ReturnType<typeof useLedger> }) {
   const { entries, accounts } = ledger;
   const [editing, setEditing] = useState<LedgerEntry | null>(null);
   const [formKey, setFormKey] = useState(0);
@@ -64,9 +49,6 @@ function LedgerWorkspace({ ledger }: { ledger: ReturnType<typeof useLedger> }) {
     setFormKey((key) => key + 1);
     dialog.current?.showModal();
   }
-  function createAccount() {
-    setView('accounts');
-  }
   function onSaved(date: string, message: string) {
     const [entryYear, entryMonth] = date.split('-').map(Number);
     setYear(entryYear);
@@ -102,14 +84,9 @@ function LedgerWorkspace({ ledger }: { ledger: ReturnType<typeof useLedger> }) {
             </p>
           )}
           {ledger.state === 'signed-out' ? (
-            <div className="auth-actions">
-              <a className="primary-button" href="/auth/google">
-                Continue with Google
-              </a>
-              <a className="secondary-button" href="?sample=1">
-                View sample month
-              </a>
-            </div>
+            <a className="primary-button" href="/auth/google">
+              Continue with Google
+            </a>
           ) : ledger.state === 'error' ? (
             <button
               className="primary-button"
@@ -231,30 +208,6 @@ function LedgerWorkspace({ ledger }: { ledger: ReturnType<typeof useLedger> }) {
             </button>
           </div>
         </div>
-        {(accounts.length > 0 || view !== 'accounts') && (
-          <div className="quick-action">
-            {accounts.length ? (
-              <button className="primary-button" disabled={ledger.busy} onClick={() => openEntry()}>
-                <span className="plus" aria-hidden="true">
-                  +
-                </span>
-                Add an entry
-              </button>
-            ) : (
-              <button className="primary-button" disabled={ledger.busy} onClick={createAccount}>
-                Set up an account
-              </button>
-            )}
-          </div>
-        )}
-        {message && (
-          <div className="feedback" role="status">
-            <span>{message}</span>
-            <button aria-label="Dismiss message" onClick={() => setMessage('')}>
-              ×
-            </button>
-          </div>
-        )}
         {['month', 'year', 'planning'].includes(view) && (
           <nav
             ref={monthStrip}
@@ -335,17 +288,6 @@ function LedgerWorkspace({ ledger }: { ledger: ReturnType<typeof useLedger> }) {
             )}
           </>
         )}
-        {ledger.refreshWarning && (
-          <div className="sync-banner">
-            <span role="status">Couldn’t refresh the ledger. Showing the last loaded figures.</span>
-            <button
-              disabled={ledger.refreshing}
-              onClick={() => void ledger.refresh('read').catch(() => {})}
-            >
-              Retry refresh
-            </button>
-          </div>
-        )}
         <section className="intro">
           <div>
             <p className="eyebrow">
@@ -377,7 +319,21 @@ function LedgerWorkspace({ ledger }: { ledger: ReturnType<typeof useLedger> }) {
                   : 'A place for every euro. A clearer picture of what’s yours.'}
             </p>
           </div>
+          <button className="primary-button" disabled={ledger.busy} onClick={() => openEntry()}>
+            <span className="plus" aria-hidden="true">
+              +
+            </span>
+            Add an entry
+          </button>
         </section>
+        {message && (
+          <div className="feedback" role="status">
+            {message}
+            <button aria-label="Dismiss message" onClick={() => setMessage('')}>
+              ×
+            </button>
+          </div>
+        )}
         {view === 'planning' ? (
           <PlanningPanel
             data={ledger}
@@ -404,11 +360,9 @@ function LedgerWorkspace({ ledger }: { ledger: ReturnType<typeof useLedger> }) {
             busy={ledger.busy}
             mutate={ledger.mutate}
             onMessage={setMessage}
-            onFirstEntry={entries.length === 0 ? () => openEntry() : undefined}
           />
         ) : view === 'month' ? (
           <MonthView
-            key={monthKey(year, month)}
             report={yearReport.months[month]}
             accounts={accounts}
             busy={ledger.busy}
@@ -416,13 +370,6 @@ function LedgerWorkspace({ ledger }: { ledger: ReturnType<typeof useLedger> }) {
             month={month}
             openEntry={openEntry}
             navigate={navigate}
-            createAccount={createAccount}
-            availability={
-              <ReservationSummary
-                totals={reservationTotals(ledger, monthKey(year, month))}
-                onPlan={() => setView('planning')}
-              />
-            }
           />
         ) : (
           <YearView

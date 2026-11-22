@@ -132,77 +132,9 @@ test('an interrupted save cannot create a duplicate when retried', async ({ page
   });
   await page.getByRole('button', { name: 'Save entry', exact: true }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
-  await expect(
-    page.getByText('Entry saved on this device. Waiting to sync.', { exact: true }),
-  ).toBeVisible();
   await page.getByRole('button', { name: 'Retry sync', exact: true }).click();
   await page.getByRole('textbox', { name: 'Search transactions' }).fill(name);
   await expect(page.getByRole('button', { name: 'Edit ' + name, exact: true })).toHaveCount(1);
-});
-
-test('confirms a D1 write even if refresh fails and retries by reading only', async ({
-  page,
-  request,
-}) => {
-  const name = 'Confirmed expense ' + Date.now();
-  const accountId = crypto.randomUUID();
-  const origin = new URL((await request.get('/api/ledger/version')).url()).origin;
-  const account = await request.post('/api/accounts', {
-    headers: { Origin: origin },
-    data: { id: accountId, name, kind: 'cash', openingBalanceCents: 2000 },
-  });
-  expect(account.status()).toBe(201);
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Add an entry', exact: true }).click();
-  const dialog = page.getByRole('dialog');
-  await dialog.getByRole('combobox', { name: 'Account', exact: true }).selectOption(accountId);
-  await dialog.getByLabel('Amount (€)', { exact: true }).fill('12.50');
-  await dialog.getByLabel('Name / place', { exact: true }).fill(name);
-  let writes = 0;
-  let failRefresh = false;
-  const attemptedIds: string[] = [];
-  await page.route('**/api/entries', async (route) => {
-    writes++;
-    attemptedIds.push(route.request().postDataJSON().id);
-    if (writes === 1)
-      return route.fulfill({ status: 503, json: { error: 'Write temporarily unavailable' } });
-    const response = await route.fetch();
-    expect(response.status()).toBe(201);
-    failRefresh = true;
-    await route.fulfill({ response });
-  });
-  await page.route('**/api/ledger/version', (route) =>
-    failRefresh
-      ? route.fulfill({ status: 503, json: { error: 'Temporary refresh outage' } })
-      : route.continue(),
-  );
-  await dialog.getByRole('button', { name: 'Save entry', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toHaveText('Write temporarily unavailable');
-  await expect(page.getByText('Entry saved.', { exact: true })).toHaveCount(0);
-  await dialog.getByRole('button', { name: 'Save entry', exact: true }).click();
-  await expect(dialog).not.toBeVisible();
-  await expect(page.getByText('Entry saved.', { exact: true })).toBeVisible();
-  await expect(page.getByText(/Showing the last loaded figures/)).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Your ledger/ })).toBeVisible();
-  const readLedger = async () => (await (await request.get('/api/ledger')).json()) as Snapshot;
-  expect((await readLedger()).entries.filter((entry) => entry.merchant === name)).toHaveLength(1);
-  failRefresh = false;
-  const retryRequests: string[] = [];
-  page.on('request', (req) => {
-    if (new URL(req.url()).pathname.startsWith('/api/')) retryRequests.push(req.method());
-  });
-  const retry = page.getByRole('button', { name: 'Retry refresh', exact: true });
-  await retry.click();
-  await expect(retry).not.toBeVisible();
-  await page.getByRole('textbox', { name: 'Search transactions' }).fill(name);
-  await expect(page.getByRole('button', { name: 'Edit ' + name, exact: true })).toBeVisible();
-  expect(retryRequests.length).toBeGreaterThan(0);
-  expect(new Set(retryRequests)).toEqual(new Set(['GET']));
-  expect(writes).toBe(2);
-  expect(attemptedIds[0]).toBe(attemptedIds[1]);
-  const saved = (await readLedger()).entries.filter((entry) => entry.merchant === name);
-  expect(saved).toHaveLength(1);
-  expect(saved[0].amountCents).toBe(1250);
 });
 
 test('account opening balance can be corrected from its card', async ({ page, request }) => {

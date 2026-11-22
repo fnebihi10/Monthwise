@@ -32,13 +32,10 @@ test('switching identities replaces the offline snapshot and switching back rest
           },
         }),
   );
-  for (const [index, identity] of ['Alice', 'Bob', 'Alice'].entries()) {
+  for (const identity of ['Alice', 'Bob', 'Alice']) {
     owner = identity;
     disconnected = false;
-    if (index === 0) await page.goto('/');
-    else await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-    await expect(page.getByText(`${identity}@example.test`, { exact: true })).toBeVisible();
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await page.goto('/');
     await page.getByRole('button', { name: 'Accounts', exact: true }).click();
     await expect(
       page.getByRole('heading', { name: `${identity} private bank`, exact: true }),
@@ -68,10 +65,5 @@ test('switching identities replaces the offline snapshot and switching back rest
       page.getByRole('heading', { name: `${identity} private bank`, exact: true }),
     ).toBeVisible();
     await expect(page.getByText(`${other} private bank`, { exact: true })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Add an entry', exact: true }).click();
-    await page
-      .getByRole('dialog')
-      .getByLabel('Name / place', { exact: true })
-      .fill(`${identity} draft`);
   }
 });

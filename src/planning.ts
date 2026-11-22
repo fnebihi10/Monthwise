@@ -21,9 +21,7 @@ export function goalSaved(data: Snapshot, id: string) {
 }
 export function planningTotals(data: Snapshot, month: string) {
   const entries = data.entries.filter((e) => e.date.startsWith(month + '-'));
-  return { ...summarize(entries), ...reservationTotals(data, month) };
-}
-export function reservationTotals(data: Snapshot, month: string) {
+  const actual = summarize(entries);
   const pending = data.plans.filter((p) => p.dueDate.startsWith(month + '-') && !p.paidEntryId);
   const bills = pending.filter((p) => p.kind === 'bill').reduce((s, p) => s + p.amountCents, 0);
   const expected = pending
@@ -31,5 +29,5 @@ export function reservationTotals(data: Snapshot, month: string) {
     .reduce((s, p) => s + p.amountCents, 0);
   const reserved = data.allocations.reduce((s, a) => s + a.amountCents, 0);
   const balance = data.accounts.reduce((s, a) => s + a.balanceCents, 0);
-  return { bills, expected, reserved, balance, unassigned: balance - bills - reserved };
+  return { ...actual, bills, expected, reserved, balance, unassigned: balance - bills - reserved };
 }

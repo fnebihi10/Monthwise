@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Account, LedgerEntry } from './models';
 import { euro, months } from './finance';
 import { Arrow } from './Arrow';
@@ -15,18 +15,14 @@ export function MonthView({
   month,
   openEntry,
   navigate,
-  createAccount,
-  availability,
 }: {
   report: MonthReport;
   accounts: Account[];
-  busy?: boolean;
+  busy: boolean;
   year: number;
   month: number;
-  openEntry?: (entry?: LedgerEntry) => void;
-  navigate?: (delta: number) => void;
-  createAccount?: () => void;
-  availability: ReactNode;
+  openEntry: (entry?: LedgerEntry) => void;
+  navigate: (delta: number) => void;
 }) {
   const [query, setQuery] = useState(''),
     [filter, setFilter] = useState('all'),
@@ -50,6 +46,11 @@ export function MonthView({
   const displayed = showAll ? filtered : filtered.slice(0, 6);
   const accountNames = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts]);
   const retainedPercent = total.income ? Math.round((total.retained / total.income) * 100) : null;
+  useEffect(() => {
+    setQuery('');
+    setFilter('all');
+    setShowAll(false);
+  }, [year, month]);
   return (
     <>
       <section className="summary" aria-label="Monthly financial summary">
@@ -73,7 +74,6 @@ export function MonthView({
           </span>
         </div>
       </section>
-      {availability}
       <div className="workspace">
         <section className="ledger">
           <div className="section-heading">
@@ -143,18 +143,14 @@ export function MonthView({
                   <tr key={entry.id}>
                     <td className="date-cell">{shortDate(entry.date)}</td>
                     <td>
-                      {openEntry ? (
-                        <button
-                          className="merchant edit-entry"
-                          disabled={busy}
-                          onClick={() => openEntry(entry)}
-                          aria-label={'Edit ' + entry.merchant}
-                        >
-                          {entry.merchant}
-                        </button>
-                      ) : (
-                        <span className="merchant">{entry.merchant}</span>
-                      )}
+                      <button
+                        className="merchant edit-entry"
+                        disabled={busy}
+                        onClick={() => openEntry(entry)}
+                        aria-label={'Edit ' + entry.merchant}
+                      >
+                        {entry.merchant}
+                      </button>
                       <span className="entry-note">
                         {entry.note || entry.category}
                         {' · ' + (accountNames.get(entry.accountId) || 'Account')}
@@ -182,17 +178,11 @@ export function MonthView({
               <p>
                 {query || filter !== 'all'
                   ? 'Try a different search or filter.'
-                  : accounts.length
-                    ? 'Record income or an expense for this month.'
-                    : 'Create a cash or bank account to record your first entry.'}
+                  : 'Start this chapter with your first income or expense.'}
               </p>
-              {!query && filter === 'all' && openEntry && (
-                <button
-                  className="text-button"
-                  disabled={busy}
-                  onClick={accounts.length ? () => openEntry() : createAccount}
-                >
-                  {accounts.length ? 'Record an entry' : 'Create your first account'} <Arrow />
+              {!query && filter === 'all' && (
+                <button className="text-button" onClick={() => openEntry()}>
+                  Add your first entry <Arrow />
                 </button>
               )}
             </div>
@@ -246,23 +236,36 @@ export function MonthView({
               <p className="muted">Your spending breakdown will appear after your first expense.</p>
             )}
           </section>
+          <section className="note-card">
+            <span className="note-star" aria-hidden="true">
+              ✳
+            </span>
+            <p className="eyebrow">A NOTE ON YOUR NUMBERS</p>
+            <h3>
+              Left over isn’t
+              <br />
+              all spoken for.
+            </h3>
+            <p>
+              “What stayed” is income minus expenses. It doesn’t include opening balances or unpaid
+              bills. Review your commitments before making plans.
+            </p>
+          </section>
         </aside>
       </div>
-      {navigate && (
-        <section className="month-footer">
-          <button className="text-button" onClick={() => navigate(-1)}>
-            <Arrow direction="left" />
-            {months[(month + 11) % 12]}
-            {month === 0 ? ' ' + (year - 1) : ''}
-          </button>
-          <span>Every month has a story. This one is yours.</span>
-          <button className="text-button" onClick={() => navigate(1)}>
-            {months[(month + 1) % 12]}
-            {month === 11 ? ' ' + (year + 1) : ''}
-            <Arrow />
-          </button>
-        </section>
-      )}
+      <section className="month-footer">
+        <button className="text-button" onClick={() => navigate(-1)}>
+          <Arrow direction="left" />
+          {months[(month + 11) % 12]}
+          {month === 0 ? ' ' + (year - 1) : ''}
+        </button>
+        <span>Every month has a story. This one is yours.</span>
+        <button className="text-button" onClick={() => navigate(1)}>
+          {months[(month + 1) % 12]}
+          {month === 11 ? ' ' + (year + 1) : ''}
+          <Arrow />
+        </button>
+      </section>
     </>
   );
 }
